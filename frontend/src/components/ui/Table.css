@@ -1,0 +1,77 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg); /* Rounded table container */
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-body);
+}
+
+.table-row {
+  transition: background-color var(--transition-fast);
+}
+
+.table-row:hover {
+  background-color: rgba(246, 241, 235, 0.4) !important; /* Soft zebra/row hover */
+}
+
+/* Zebra row stripes */
+.table-row:nth-child(even) {
+  background-color: rgba(252, 250, 247, 0.5);
+}
+
+.table-head {
+  background-color: var(--color-secondary); /* Cream table header background */
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 20px;
+  border-bottom: 1.5px solid var(--color-border);
+  text-align: left;
+  position: sticky; /* Sticky headers */
+  top: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.table-cell {
+  padding: 16px 20px;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+/* Spacing and border corrections for outer cells */
+.table-row:last-child .table-cell {
+  border-bottom: none;
+}
+
+/* Loading pulsed skeleton styling */
+.skeleton-row .table-cell {
+  padding: 20px;
+}
+
+.skeleton-cell-block {
+  height: 16px;
+  background: linear-gradient(90deg, #F2EAE4 25%, #E9DFD5 50%, #F2EAE4 75%);
+  background-size: 200% 100%;
+  animation: pulseSkeleton 1.5s infinite;
+  border-radius: var(--radius-xs);
+  width: 70%;
+}
+
+.skeleton-cell-block.short {
+  width: 35%;
+}
+
+@keyframes pulseSkeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

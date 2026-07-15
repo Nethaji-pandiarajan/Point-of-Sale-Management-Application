@@ -1,0 +1,233 @@
+.icon-picker-modal-container {
+  max-width: 580px !important;
+  width: 90% !important;
+}
+
+.icon-picker-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 480px;
+}
+
+/* 1. Search input wrapper */
+.picker-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.picker-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background-color: #F8F8F8;
+  transition: all var(--transition-fast);
+}
+
+.picker-search-input:focus {
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.1);
+}
+
+.picker-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* 2. Group Filter Tabs */
+.picker-group-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  white-space: nowrap;
+}
+
+.picker-group-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.picker-group-tabs::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 4px;
+}
+
+.picker-group-tab {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+}
+
+.picker-group-tab:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+}
+
+.picker-group-tab.active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-white);
+}
+
+/* 3. Grid and Option Cards */
+.picker-icons-grid-container {
+  overflow-y: auto;
+  max-height: 260px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: #FBFBFB;
+}
+
+.picker-icons-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.picker-empty-state {
+  text-align: center;
+  padding: 40px var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.picker-icon-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+  aspect-ratio: 1 / 1;
+}
+
+.picker-icon-card:hover {
+  border-color: var(--color-primary-dark);
+  background-color: var(--color-primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.picker-icon-card:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.2);
+}
+
+.picker-card-emoji {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.picker-card-label {
+  font-size: 0.65rem;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+/* 4. Selected Card Highlight */
+.picker-icon-card.selected {
+  border-color: var(--color-primary) !important;
+  background-color: var(--color-primary-light) !important;
+  box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.15) !important;
+}
+
+.picker-icon-card.selected .picker-card-label {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* Check badge overlay style */
+.picker-check-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 5. Footer Preview */
+.picker-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-md);
+}
+
+.picker-footer-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-label-muted {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.preview-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.preview-text {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* 6. Responsiveness Media Queries */
+@media (max-width: 768px) {
+  .picker-icons-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .picker-icons-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .picker-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .picker-footer-preview {
+    justify-content: center;
+  }
+}
