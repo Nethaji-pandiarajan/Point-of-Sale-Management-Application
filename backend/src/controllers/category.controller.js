@@ -1,17 +1,10 @@
 const categoryModel = require('../models/category.model');
-const productModel = require('../models/product.model');
+const db = require('../config/db');
 
 const getCategories = async (req, res, next) => {
   try {
-    const categories = categoryModel.findAll();
-    const products = productModel.findAll();
+    const categoriesWithCount = await categoryModel.findAll();
     
-    // Dynamically calculate product count for each category
-    const categoriesWithCount = categories.map(cat => {
-      const count = products.filter(p => p.categoryId === cat.id).length;
-      return { ...cat, productCount: count };
-    });
-
     res.status(200).json({
       status: 'success',
       data: categoriesWithCount
@@ -30,12 +23,12 @@ const createCategory = async (req, res, next) => {
     }
 
     // Duplicate Check
-    const exists = categoryModel.existsByName(name);
+    const exists = await categoryModel.existsByName(name);
     if (exists) {
       return res.status(400).json({ status: 'error', message: `Category "${name}" already exists` });
     }
 
-    const newCategory = categoryModel.create({
+    const newCategory = await categoryModel.create({
       name,
       description,
       icon,
@@ -56,20 +49,20 @@ const updateCategory = async (req, res, next) => {
     const { id } = req.params;
     const { name, description, icon, status } = req.body;
 
-    const existingCat = categoryModel.findById(id);
+    const existingCat = await categoryModel.findById(id);
     if (!existingCat) {
       return res.status(404).json({ status: 'error', message: 'Category not found' });
     }
 
     // Duplicate Check (except self)
     if (name) {
-      const duplicate = categoryModel.existsByNameExceptId(name, id);
+      const duplicate = await categoryModel.existsByNameExceptId(name, id);
       if (duplicate) {
         return res.status(400).json({ status: 'error', message: `Category "${name}" already exists` });
       }
     }
 
-    const updatedCat = categoryModel.update(id, {
+    const updatedCat = await categoryModel.update(id, {
       name,
       description,
       icon,
@@ -88,14 +81,22 @@ const updateCategory = async (req, res, next) => {
 const deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deletedCat = categoryModel.remove(id);
 
+    // Check if there are active products belonging to this category
+    const productCountResult = await db.query('SELECT COUNT(id)::integer FROM products WHERE category_id = $1', [parseInt(id, 10)]);
+    const count = productCountResult.rows[0].count;
+
+    if (count > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Cannot delete category that still contains products. Please delete or reassign all products first.'
+      });
+    }
+
+    const deletedCat = await categoryModel.remove(id);
     if (!deletedCat) {
       return res.status(404).json({ status: 'error', message: 'Category not found' });
     }
-
-    // Delete or unassign products belonging to this category
-    productModel.deleteByCategory(id);
 
     res.status(200).json({
       status: 'success',
@@ -107,7 +108,7 @@ const deleteCategory = async (req, res, next) => {
 };
 
 // Interface exports for backward compatibility
-const getInMemoryCategories = () => categoryModel.findAll();
+const getInMemoryCategories = async () => await categoryModel.findAll();
 
 module.exports = {
   getCategories,

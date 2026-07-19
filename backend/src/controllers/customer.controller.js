@@ -1,36 +1,52 @@
-// In-memory Customer Mock DB
-let customers = [
-  { id: 'c1', name: 'Jonathan Harker', email: 'jonathan.harker@gmail.com', phone: '+1 555-0192', totalOrders: 2, totalSpent: 42.50, status: 'active', joinedDate: '2026-06-15' },
-  { id: 'c2', name: 'Mina Murray', email: 'mina.murray@gmail.com', phone: '+1 555-0143', totalOrders: 2, totalSpent: 32.50, status: 'active', joinedDate: '2026-06-18' },
-  { id: 'c3', name: 'Lucy Westenra', email: 'lucy.westenra@yahoo.com', phone: '+1 555-0177', totalOrders: 2, totalSpent: 51.50, status: 'active', joinedDate: '2026-06-20' },
-  { id: 'c4', name: 'Arthur Holmwood', email: 'arthur.h@lord.co.uk', phone: '+1 555-0185', totalOrders: 1, totalSpent: 40.50, status: 'active', joinedDate: '2026-06-22' },
-  { id: 'c5', name: 'Quincey Morris', email: 'quincey.morris@texas.gov', phone: '+1 555-0111', totalOrders: 1, totalSpent: 10.50, status: 'active', joinedDate: '2026-06-25' },
-  { id: 'c6', name: 'Renfield Fly', email: 'renfield@asylum.org', phone: '+1 555-0999', totalOrders: 1, totalSpent: 28.00, status: 'blocked', joinedDate: '2026-06-28' }
-];
+const db = require('../config/db');
 
 const getCustomers = async (req, res, next) => {
   try {
     const { status, search } = req.query;
-    let filteredList = [...customers];
 
-    // Filter by Block status
+    let queryText = `
+      SELECT u.id, u.name, u.email, u.phone, u.status, u.created_at AS "joinedDate",
+             COALESCE(COUNT(o.id), 0)::integer AS "totalOrders",
+             COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END), 0)::numeric AS "totalSpent"
+      FROM users u
+      LEFT JOIN orders o ON u.id = o.user_id
+      WHERE u.role = 'customer'
+    `;
+    const params = [];
+    let paramIndex = 1;
+
     if (status) {
-      filteredList = filteredList.filter(c => c.status === status);
+      queryText += ` AND u.status = $${paramIndex++}`;
+      params.push(status);
     }
 
-    // Filter by Search (Name, Email or Phone)
     if (search) {
-      const term = search.toLowerCase().trim();
-      filteredList = filteredList.filter(
-        c => c.name.toLowerCase().includes(term) ||
-             c.email.toLowerCase().includes(term) ||
-             c.phone.includes(term)
-      );
+      queryText += ` AND (LOWER(u.name) LIKE $${paramIndex} OR LOWER(u.email) LIKE $${paramIndex} OR u.phone LIKE $${paramIndex})`;
+      params.push(`%${search.toLowerCase().trim()}%`);
+      paramIndex++;
     }
+
+    queryText += `
+      GROUP BY u.id, u.name, u.email, u.phone, u.status, u.created_at
+      ORDER BY u.name ASC
+    `;
+
+    const result = await db.query(queryText, params);
+
+    const mapped = result.rows.map(row => ({
+      id: row.id.toString(),
+      name: row.name,
+      email: row.email,
+      phone: row.phone || '',
+      status: row.status,
+      totalOrders: row.totalOrders,
+      totalSpent: parseFloat(row.totalSpent),
+      joinedDate: row.joinedDate ? new Date(row.joinedDate).toISOString().split('T')[0] : ''
+    }));
 
     res.status(200).json({
       status: 'success',
-      data: filteredList
+      data: mapped
     });
   } catch (error) {
     next(error);
@@ -40,23 +56,54 @@ const getCustomers = async (req, res, next) => {
 const getCustomerById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const customer = customers.find(c => c.id === id);
 
+    // Find customer
+    const userResult = await db.query(`
+      SELECT u.id, u.name, u.email, u.phone, u.status, u.created_at AS "joinedDate",
+             COALESCE(COUNT(o.id), 0)::integer AS "totalOrders",
+             COALESCE(SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END), 0)::numeric AS "totalSpent"
+      FROM users u
+      LEFT JOIN orders o ON u.id = o.user_id
+      WHERE u.id = $1 AND u.role = 'customer'
+      GROUP BY u.id, u.name, u.email, u.phone, u.status, u.created_at
+    `, [id]);
+
+    const customer = userResult.rows[0];
     if (!customer) {
       return res.status(404).json({ status: 'error', message: 'Customer not found' });
     }
 
-    // Get order history from backend orders list if possible, or mock it locally
-    const mockOrderHistory = [
-      { id: 'ORD-9482', items: '2x Truffle Fries, 1x Caesar Salad', total: '$39.00', date: '2026-07-13', status: 'pending' },
-      { id: 'ORD-9472', items: '1x Double Espresso Shot', total: '$3.50', date: '2026-07-08', status: 'completed' }
-    ];
+    // Query historical orders for this customer from database with dynamic item concatenation
+    const ordersResult = await db.query(`
+      SELECT o.id, o.order_number AS "orderNo", o.total_amount AS total, o.created_at AS date, o.status,
+             COALESCE(STRING_AGG(oi.quantity || 'x ' || oi.product_name, ', '), '') AS items
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.user_id = $1
+      GROUP BY o.id, o.order_number, o.total_amount, o.created_at, o.status
+      ORDER BY o.created_at DESC
+    `, [id]);
+
+    const orderHistory = ordersResult.rows.map(o => ({
+      id: o.id,
+      items: o.items || 'No items',
+      total: `₹${parseFloat(o.total).toFixed(2)}`,
+      date: new Date(o.date).toISOString().split('T')[0],
+      status: o.status
+    }));
 
     res.status(200).json({
       status: 'success',
       data: {
-        ...customer,
-        orders: mockOrderHistory
+        id: customer.id.toString(),
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || '',
+        totalOrders: customer.totalOrders,
+        totalSpent: parseFloat(customer.totalSpent),
+        status: customer.status,
+        joinedDate: customer.joinedDate ? new Date(customer.joinedDate).toISOString().split('T')[0] : '',
+        orders: orderHistory
       }
     });
   } catch (error) {
@@ -73,16 +120,23 @@ const updateCustomerStatus = async (req, res, next) => {
       return res.status(400).json({ status: 'error', message: 'Status must be active or blocked' });
     }
 
-    const customerIndex = customers.findIndex(c => c.id === id);
-    if (customerIndex === -1) {
+    const result = await db.query(`
+      UPDATE users 
+      SET status = $1 
+      WHERE id = $2 AND role = $3 
+      RETURNING id, name, email, phone, status
+    `, [status, id, 'customer']);
+
+    if (result.rowCount === 0) {
       return res.status(404).json({ status: 'error', message: 'Customer not found' });
     }
 
-    customers[customerIndex].status = status;
-
     res.status(200).json({
       status: 'success',
-      data: customers[customerIndex]
+      data: {
+        ...result.rows[0],
+        id: result.rows[0].id.toString()
+      }
     });
   } catch (error) {
     next(error);

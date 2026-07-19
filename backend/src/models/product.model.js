@@ -1,61 +1,109 @@
-// In-memory Product Mock DB
-let products = [
-  { id: '1', name: 'Truffle Parmesan Fries', description: 'Hand-cut fries with truffle oil and shaved parmesan', categoryId: '1', price: 12.50, availability: 'available', image: '🍟' },
-  { id: '2', name: 'Classic Caesar Salad', description: 'Romaine lettuce, garlic croutons, creamy Caesar dressing', categoryId: '1', price: 14.00, availability: 'available', image: '🥗' },
-  { id: '3', name: 'Margherita Woodfired Pizza', description: 'Fresh mozzarella, san marzano tomatoes, fresh basil', categoryId: '2', price: 18.50, availability: 'available', image: '🍕' },
-  { id: '4', name: 'Spaghetti Carbonara', description: 'Pecorino romano, guanciale, fresh eggs, black pepper', categoryId: '2', price: 22.00, availability: 'available', image: '🍝' },
-  { id: '5', name: 'Saleiz Tiramisu Cup', description: 'Espresso-soaked ladyfingers, mascarpone cream, cocoa powder', categoryId: '3', price: 9.50, availability: 'available', image: '🍰' },
-  { id: '6', name: 'Artisan Gelato Trio', description: 'Choice of chocolate, pistachio, strawberry and vanilla', categoryId: '3', price: 8.00, availability: 'out_of_stock', image: '🍨' },
-  { id: '7', name: 'Lemon Mint Iced Tea', description: 'Freshly brewed black tea, organic honey, fresh lemon juice', categoryId: '4', price: 4.50, availability: 'available', image: '🍹' },
-  { id: '8', name: 'Double Espresso Shot', description: 'Rich premium dark roast espresso blend', categoryId: '4', price: 3.50, availability: 'available', image: '☕' }
-];
+const db = require('../config/db');
 
-const findAll = () => {
-  return [...products];
-};
-
-const findById = (id) => {
-  return products.find(p => p.id === id) || null;
-};
-
-const create = (data) => {
-  const newProduct = {
-    id: Math.random().toString(36).substring(2, 9),
-    name: data.name.trim(),
-    description: data.description || '',
-    categoryId: data.categoryId,
-    price: data.price,
-    availability: data.availability || 'available',
-    image: data.image || '🍔'
+const mapProduct = (row) => {
+  if (!row) return null;
+  return {
+    id: row.id, // Number type ID
+    categoryId: row.category_id, // Number type categoryId
+    name: row.name,
+    description: row.description,
+    price: parseFloat(row.price),
+    availability: row.is_available ? 'available' : 'out_of_stock',
+    image: row.image_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   };
-  products.push(newProduct);
-  return newProduct;
 };
 
-const update = (id, data) => {
-  const prodIndex = products.findIndex(p => p.id === id);
-  if (prodIndex === -1) return null;
-
-  if (data.name) products[prodIndex].name = data.name.trim();
-  if (data.description !== undefined) products[prodIndex].description = data.description;
-  if (data.categoryId) products[prodIndex].categoryId = data.categoryId;
-  if (data.price !== undefined) products[prodIndex].price = data.price;
-  if (data.availability) products[prodIndex].availability = data.availability;
-  if (data.image) products[prodIndex].image = data.image;
-
-  return products[prodIndex];
+const findAll = async () => {
+  const result = await db.query('SELECT * FROM products ORDER BY name ASC');
+  return result.rows.map(mapProduct);
 };
 
-const remove = (id) => {
-  const prodIndex = products.findIndex(p => p.id === id);
-  if (prodIndex === -1) return null;
-  const deleted = products[prodIndex];
-  products = products.filter(p => p.id !== id);
-  return deleted;
+const findById = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const result = await db.query('SELECT * FROM products WHERE id = $1', [parsedId]);
+  return mapProduct(result.rows[0]);
 };
 
-const deleteByCategory = (categoryId) => {
-  products = products.filter(p => p.categoryId !== categoryId);
+const create = async (data) => {
+  const categoryId = parseInt(data.categoryId, 10);
+  const name = data.name.trim();
+  const description = data.description || '';
+  const price = parseFloat(data.price);
+  const imageUrl = data.image || '🍔';
+  const isAvailable = data.availability !== 'out_of_stock';
+
+  const result = await db.query(`
+    INSERT INTO products (category_id, name, description, price, image_url, is_available)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *
+  `, [categoryId, name, description, price, imageUrl, isAvailable]);
+  return mapProduct(result.rows[0]);
+};
+
+const update = async (id, data) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const fields = [];
+  const params = [];
+  let index = 1;
+
+  if (data.name) {
+    fields.push(`name = $${index++}`);
+    params.push(data.name.trim());
+  }
+  if (data.description !== undefined) {
+    fields.push(`description = $${index++}`);
+    params.push(data.description);
+  }
+  if (data.categoryId) {
+    fields.push(`category_id = $${index++}`);
+    params.push(parseInt(data.categoryId, 10));
+  }
+  if (data.price !== undefined) {
+    fields.push(`price = $${index++}`);
+    params.push(parseFloat(data.price));
+  }
+  if (data.availability) {
+    fields.push(`is_available = $${index++}`);
+    params.push(data.availability !== 'out_of_stock');
+  }
+  if (data.image) {
+    fields.push(`image_url = $${index++}`);
+    params.push(data.image);
+  }
+
+  if (fields.length === 0) return await findById(id);
+
+  params.push(parsedId);
+  const queryText = `
+    UPDATE products 
+    SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP 
+    WHERE id = $${index} 
+    RETURNING *
+  `;
+
+  const result = await db.query(queryText, params);
+  return mapProduct(result.rows[0]);
+};
+
+const remove = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const result = await db.query('DELETE FROM products WHERE id = $1 RETURNING *', [parsedId]);
+  return mapProduct(result.rows[0]);
+};
+
+const deleteByCategory = async (categoryId) => {
+  const parsedCategoryId = parseInt(categoryId, 10);
+  if (isNaN(parsedCategoryId)) return [];
+  const result = await db.query('DELETE FROM products WHERE category_id = $1 RETURNING *', [parsedCategoryId]);
+  return result.rows.map(mapProduct);
 };
 
 module.exports = {

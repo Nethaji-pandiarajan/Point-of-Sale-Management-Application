@@ -1,57 +1,127 @@
-// In-memory Category Mock DB
-let categories = [
-  { id: '1', name: 'Appetizers', description: 'Light starters and finger foods', icon: '🥗', status: 'active' },
-  { id: '2', name: 'Main Course', description: 'Filling primary dinner courses', icon: '🍝', status: 'active' },
-  { id: '3', name: 'Desserts', description: 'Sweet cakes, pies and ice creams', icon: '🍰', status: 'active' },
-  { id: '4', name: 'Beverages', description: 'Hot and cold refreshments', icon: '🍹', status: 'active' }
-];
+const db = require('../config/db');
 
-const findAll = () => {
-  return [...categories];
+const getIconLabel = (key) => {
+  if (!key) return 'Other';
+  return key.charAt(0).toUpperCase() + key.slice(1);
 };
 
-const findById = (id) => {
-  return categories.find(c => c.id === id) || null;
+const findAll = async () => {
+  const result = await db.query(`
+    SELECT c.id, c.name, c.description, c.icon_key AS icon, c.status, c.created_at, c.updated_at,
+           COALESCE(COUNT(p.id), 0)::integer AS "productCount"
+    FROM categories c
+    LEFT JOIN products p ON c.id = p.category_id
+    GROUP BY c.id, c.name, c.description, c.icon_key, c.status, c.created_at, c.updated_at
+    ORDER BY c.name ASC
+  `);
+  return result.rows; // Returns numeric id
 };
 
-const existsByName = (name) => {
-  return categories.some(c => c.name.toLowerCase() === name.trim().toLowerCase());
+const findById = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const result = await db.query(`
+    SELECT id, name, description, icon_key AS icon, status 
+    FROM categories 
+    WHERE id = $1
+  `, [parsedId]);
+  
+  if (result.rowCount === 0) return null;
+  return result.rows[0];
 };
 
-const existsByNameExceptId = (name, id) => {
-  return categories.some(c => c.id !== id && c.name.toLowerCase() === name.trim().toLowerCase());
+const existsByName = async (name) => {
+  const result = await db.query(`
+    SELECT id 
+    FROM categories 
+    WHERE LOWER(name) = LOWER($1)
+  `, [name.trim()]);
+  return result.rowCount > 0;
 };
 
-const create = (data) => {
-  const newCategory = {
-    id: Math.random().toString(36).substring(2, 9),
-    name: data.name.trim(),
-    description: data.description || '',
-    icon: data.icon || '🍽️',
-    status: data.status || 'active'
-  };
-  categories.push(newCategory);
-  return newCategory;
+const existsByNameExceptId = async (name, id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return false;
+
+  const result = await db.query(`
+    SELECT id 
+    FROM categories 
+    WHERE LOWER(name) = LOWER($1) AND id <> $2
+  `, [name.trim(), parsedId]);
+  return result.rowCount > 0;
 };
 
-const update = (id, data) => {
-  const catIndex = categories.findIndex(c => c.id === id);
-  if (catIndex === -1) return null;
+const create = async (data) => {
+  const name = data.name.trim();
+  const description = data.description || '';
+  const iconKey = data.icon || 'salad';
+  const iconLabel = getIconLabel(iconKey);
+  const status = data.status || 'active';
 
-  if (data.name) categories[catIndex].name = data.name.trim();
-  if (data.description !== undefined) categories[catIndex].description = data.description;
-  if (data.icon) categories[catIndex].icon = data.icon;
-  if (data.status) categories[catIndex].status = data.status;
-
-  return categories[catIndex];
+  const result = await db.query(`
+    INSERT INTO categories (name, description, icon_key, icon_label, status)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, name, description, icon_key AS icon, status
+  `, [name, description, iconKey, iconLabel, status]);
+  
+  return result.rows[0];
 };
 
-const remove = (id) => {
-  const catIndex = categories.findIndex(c => c.id === id);
-  if (catIndex === -1) return null;
-  const deleted = categories[catIndex];
-  categories = categories.filter(c => c.id !== id);
-  return deleted;
+const update = async (id, data) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const fields = [];
+  const params = [];
+  let index = 1;
+
+  if (data.name) {
+    fields.push(`name = $${index++}`);
+    params.push(data.name.trim());
+  }
+  if (data.description !== undefined) {
+    fields.push(`description = $${index++}`);
+    params.push(data.description);
+  }
+  if (data.icon) {
+    fields.push(`icon_key = $${index++}`);
+    params.push(data.icon);
+    fields.push(`icon_label = $${index++}`);
+    params.push(getIconLabel(data.icon));
+  }
+  if (data.status) {
+    fields.push(`status = $${index++}`);
+    params.push(data.status);
+  }
+
+  if (fields.length === 0) return await findById(id);
+
+  params.push(parsedId);
+  const queryText = `
+    UPDATE categories 
+    SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP 
+    WHERE id = $${index} 
+    RETURNING id, name, description, icon_key AS icon, status
+  `;
+
+  const result = await db.query(queryText, params);
+  if (result.rowCount === 0) return null;
+  return result.rows[0];
+};
+
+const remove = async (id) => {
+  const parsedId = parseInt(id, 10);
+  if (isNaN(parsedId)) return null;
+
+  const result = await db.query(`
+    DELETE FROM categories 
+    WHERE id = $1 
+    RETURNING id, name, description, icon_key AS icon, status
+  `, [parsedId]);
+  
+  if (result.rowCount === 0) return null;
+  return result.rows[0];
 };
 
 module.exports = {
