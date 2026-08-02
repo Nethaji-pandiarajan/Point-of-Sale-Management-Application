@@ -12,7 +12,7 @@ import useToast from '../hooks/useToast';
 import useConfirm from '../hooks/useConfirm';
 import { getCustomers, getCustomer, updateCustomerStatus } from '../services/customers';
 import { Search, Eye, ShieldAlert, ShieldCheck, RefreshCw, UserCheck } from 'lucide-react';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, formatDate } from '../utils/helpers';
 
 const Customers = () => {
   const { addToast } = useToast();
