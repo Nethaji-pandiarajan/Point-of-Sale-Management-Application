@@ -258,7 +258,7 @@ const AdvancedDataTable = ({
   const { exportToCSV, exportToExcel } = useExport();
 
   const activeColumns = useMemo(() => {
-    return columns.filter(c => visibleColumns.includes(c.key));
+    return columns.filter(c => c.key !== 'actions' && visibleColumns.includes(c.key));
   }, [columns, visibleColumns]);
 
   const handleExportCSV = useCallback(() => {
@@ -389,7 +389,7 @@ const AdvancedDataTable = ({
               {/* Action Column Header */}
               {actionColumn && (
                 <th className="adt-th-action" style={{ width: actionColumn.width || '100px' }}>
-                  {actionColumnHeader}
+                  {actionColumn.title || actionColumn.header || actionColumnHeader}
                 </th>
               )}
             </tr>

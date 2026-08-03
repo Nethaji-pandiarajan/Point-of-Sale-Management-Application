@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const login = async (req, res, next) => {
   try {
@@ -39,6 +40,17 @@ const login = async (req, res, next) => {
       process.env.JWT_SECRET || 'saleiz_secret',
       { expiresIn: '1d' }
     );
+
+    // System login notification
+    createNotification({
+      title: 'System Login',
+      message: `${user.name} logged into the system.`,
+      type: 'info',
+      icon: 'user-check',
+      reference_type: 'system',
+      reference_id: user.id,
+      created_by: user.id
+    });
 
     res.status(200).json({
       status: 'success',

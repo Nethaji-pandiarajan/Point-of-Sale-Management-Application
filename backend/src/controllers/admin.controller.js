@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const getProfile = async (req, res, next) => {
   try {
@@ -36,6 +37,16 @@ const updateProfile = async (req, res, next) => {
     if (result.rowCount === 0) {
       return res.status(404).json({ status: 'error', message: 'User not found' });
     }
+
+    createNotification({
+      title: 'Profile Updated',
+      message: `Administrator profile details updated for ${result.rows[0].name}.`,
+      type: 'info',
+      icon: 'user',
+      reference_type: 'system',
+      reference_id: req.user.id,
+      created_by: req.user.id
+    });
 
     res.status(200).json({
       status: 'success',
@@ -92,6 +103,16 @@ const changePassword = async (req, res, next) => {
     if (updateResult.rowCount === 0) {
       return res.status(500).json({ success: false, status: 'error', message: 'Failed to update database record' });
     }
+
+    createNotification({
+      title: 'Security Alert',
+      message: 'Admin account password changed successfully.',
+      type: 'warning',
+      icon: 'shield-alert',
+      reference_type: 'system',
+      reference_id: req.user.id,
+      created_by: req.user.id
+    });
 
     res.status(200).json({
       success: true,

@@ -1,5 +1,6 @@
 const categoryModel = require('../models/category.model');
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const getCategories = async (req, res, next) => {
   try {
@@ -23,8 +24,8 @@ const createCategory = async (req, res, next) => {
     }
 
     // Duplicate Check
-    const exists = await categoryModel.existsByName(name);
-    if (exists) {
+    const duplicate = await categoryModel.existsByName(name);
+    if (duplicate) {
       return res.status(400).json({ status: 'error', message: `Category "${name}" already exists` });
     }
 
@@ -33,6 +34,15 @@ const createCategory = async (req, res, next) => {
       description,
       icon,
       status
+    });
+
+    createNotification({
+      title: 'Category Added',
+      message: `Category "${newCategory.name}" created successfully.`,
+      type: 'success',
+      icon: 'tags',
+      reference_type: 'category',
+      reference_id: newCategory.id
     });
 
     res.status(201).json({
@@ -69,6 +79,15 @@ const updateCategory = async (req, res, next) => {
       status
     });
 
+    createNotification({
+      title: 'Category Updated',
+      message: `Category "${updatedCat.name}" updated successfully.`,
+      type: 'info',
+      icon: 'tags',
+      reference_type: 'category',
+      reference_id: updatedCat.id
+    });
+
     res.status(200).json({
       status: 'success',
       data: updatedCat
@@ -97,6 +116,15 @@ const deleteCategory = async (req, res, next) => {
     if (!deletedCat) {
       return res.status(404).json({ status: 'error', message: 'Category not found' });
     }
+
+    createNotification({
+      title: 'Category Deleted',
+      message: `Category "${deletedCat.name}" deleted successfully.`,
+      type: 'warning',
+      icon: 'trash',
+      reference_type: 'category',
+      reference_id: id
+    });
 
     res.status(200).json({
       status: 'success',

@@ -20,6 +20,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { getProductImageUrl } from '../utils/helpers';
+import NotificationCenter from '../components/NotificationCenter/NotificationCenter';
 import './AdminLayout.css';
 
 const AdminLayout = ({ children }) => {
@@ -163,11 +164,8 @@ const AdminLayout = ({ children }) => {
               <Search className="search-icon" size={18} />
             </div>
 
-            {/* Static Notifications Bell */}
-            <button className="topnav-bell" aria-label="Notifications">
-              <Bell size={20} />
-              <span className="bell-badge"></span>
-            </button>
+            {/* Global Enterprise Notification Center */}
+            <NotificationCenter />
 
             {/* User Profile avatar dropdown */}
             <div className="topnav-profile" ref={dropdownRef}>

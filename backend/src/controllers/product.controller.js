@@ -1,6 +1,7 @@
 const categoryModel = require('../models/category.model');
 const productModel = require('../models/product.model');
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const getProducts = async (req, res, next) => {
   try {
@@ -129,6 +130,15 @@ const createProduct = async (req, res, next) => {
       image: imageUrl
     });
 
+    createNotification({
+      title: 'Product Added',
+      message: `Product "${newProduct.name}" created successfully.`,
+      type: 'success',
+      icon: 'utensils',
+      reference_type: 'product',
+      reference_id: newProduct.id
+    });
+
     res.status(201).json({
       success: true,
       status: 'success',
@@ -191,6 +201,15 @@ const updateProduct = async (req, res, next) => {
 
     const updatedProduct = await productModel.update(id, updatePayload);
 
+    createNotification({
+      title: 'Product Updated',
+      message: `Product "${updatedProduct.name}" updated successfully.`,
+      type: 'info',
+      icon: 'utensils',
+      reference_type: 'product',
+      reference_id: updatedProduct.id
+    });
+
     res.status(200).json({
       status: 'success',
       data: updatedProduct
@@ -211,6 +230,16 @@ const deleteProduct = async (req, res, next) => {
     if (refCount > 0) {
       // Prefer soft-delete or marking inactive status if product is used in existing orders
       await productModel.update(id, { availability: 'out_of_stock' });
+
+      createNotification({
+        title: 'Product Out of Stock',
+        message: `Product ID #${id} marked as out of stock due to existing historical order references.`,
+        type: 'warning',
+        icon: 'utensils',
+        reference_type: 'product',
+        reference_id: id
+      });
+
       return res.status(200).json({
         status: 'success',
         message: `Product is linked to historical orders. Marked as out of stock/unavailable instead of deleting.`
@@ -221,6 +250,15 @@ const deleteProduct = async (req, res, next) => {
     if (!deleted) {
       return res.status(404).json({ status: 'error', message: 'Product not found' });
     }
+
+    createNotification({
+      title: 'Product Deleted',
+      message: `Product "${deleted.name}" deleted from menu catalog.`,
+      type: 'warning',
+      icon: 'trash',
+      reference_type: 'product',
+      reference_id: id
+    });
 
     res.status(200).json({
       status: 'success',

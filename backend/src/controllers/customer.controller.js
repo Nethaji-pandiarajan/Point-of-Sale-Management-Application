@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const getCustomers = async (req, res, next) => {
   try {
@@ -131,11 +132,22 @@ const updateCustomerStatus = async (req, res, next) => {
       return res.status(404).json({ status: 'error', message: 'Customer not found' });
     }
 
+    const updatedCustomer = result.rows[0];
+
+    createNotification({
+      title: status === 'blocked' ? 'Customer Account Blocked' : 'Customer Account Unblocked',
+      message: `Customer "${updatedCustomer.name}" status updated to ${status}.`,
+      type: status === 'blocked' ? 'warning' : 'info',
+      icon: 'users',
+      reference_type: 'customer',
+      reference_id: id
+    });
+
     res.status(200).json({
       status: 'success',
       data: {
-        ...result.rows[0],
-        id: result.rows[0].id.toString()
+        ...updatedCustomer,
+        id: updatedCustomer.id.toString()
       }
     });
   } catch (error) {

@@ -1,3 +1,5 @@
+const { createNotification } = require('../utils/notification.helper');
+
 // In-memory Restaurant DB
 let restaurantSettings = {
   name: 'Saleiz Bistro',
@@ -29,6 +31,14 @@ const updateSettings = async (req, res, next) => {
     restaurantSettings.address = address.trim();
     restaurantSettings.phone = phone.trim();
     restaurantSettings.hours = hours.trim();
+
+    createNotification({
+      title: 'Restaurant Settings Updated',
+      message: `Store configuration for "${restaurantSettings.name}" saved.`,
+      type: 'info',
+      icon: 'settings',
+      reference_type: 'system'
+    });
 
     res.status(200).json({
       status: 'success',

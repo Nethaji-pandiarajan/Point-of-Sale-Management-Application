@@ -12,6 +12,7 @@ const customerRoutes = require('./routes/customer.routes');
 const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/admin.routes');
 const profileRoutes = require('./routes/profile.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const restaurantRoutes = require('./routes/restaurant.routes');
 
 const path = require('path');
@@ -35,6 +36,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 
 // Base / Health Check

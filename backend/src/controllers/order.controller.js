@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { createNotification } = require('../utils/notification.helper');
 
 const getOrders = async (req, res, next) => {
   try {
@@ -262,6 +263,17 @@ const createOrder = async (req, res, next) => {
 
     await client.query('COMMIT');
 
+    // Create notification entry for new order
+    createNotification({
+      title: 'New Order Placed',
+      message: `New Order #${orderNumber} placed for ${user.name} (${tableNo ? 'Table ' + tableNo : 'Takeaway'}). Total: $${totalAmount.toFixed(2)}.`,
+      type: 'info',
+      icon: 'shopping-bag',
+      reference_type: 'order',
+      reference_id: orderId,
+      created_by: userId
+    });
+
     res.status(201).json({
       status: 'success',
       message: 'Order created successfully',
@@ -333,6 +345,17 @@ const updateOrderStatus = async (req, res, next) => {
     if (updateRes.rowCount === 0) {
       return res.status(404).json({ status: 'error', message: 'Failed to update order status' });
     }
+
+    // Trigger notification
+    const typeMap = { completed: 'success', cancelled: 'error', preparing: 'info', pending: 'warning' };
+    createNotification({
+      title: `Order #${order.order_number || parsedId} ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      message: `Order #${order.order_number || parsedId} status changed to "${status.charAt(0).toUpperCase() + status.slice(1)}".`,
+      type: typeMap[status] || 'info',
+      icon: 'shopping-bag',
+      reference_type: 'order',
+      reference_id: parsedId
+    });
 
     return getOrderById(req, res, next);
   } catch (error) {
