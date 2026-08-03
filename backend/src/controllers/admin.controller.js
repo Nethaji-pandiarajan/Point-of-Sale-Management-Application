@@ -15,7 +15,7 @@ const getProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, phone } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ status: 'error', message: 'Name and email are required fields' });
@@ -26,9 +26,11 @@ const updateProfile = async (req, res, next) => {
       return res.status(400).json({ status: 'error', message: 'Please provide a valid email address' });
     }
 
+    const phoneVal = phone !== undefined && phone !== null ? String(phone).trim() : '';
+
     const result = await db.query(
-      'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role',
-      [name.trim(), email.trim(), req.user.id]
+      'UPDATE users SET name = $1, email = $2, phone = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING id, name, email, phone, role, profile_image AS "profileImage"',
+      [name.trim(), email.trim(), phoneVal, req.user.id]
     );
 
     if (result.rowCount === 0) {

@@ -12,7 +12,7 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'saleiz_secret');
 
       // Fetch user from PostgreSQL
-      const result = await db.query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+      const result = await db.query('SELECT id, name, email, phone, role, profile_image AS "profileImage" FROM users WHERE id = $1', [decoded.id]);
       const user = result.rows[0];
 
       if (!user) {

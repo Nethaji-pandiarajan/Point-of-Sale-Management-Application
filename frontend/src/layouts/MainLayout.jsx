@@ -15,6 +15,8 @@ import {
   LogOut
 } from 'lucide-react';
 
+import { getProductImageUrl } from '../utils/helpers';
+
 const MainLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
@@ -77,7 +79,17 @@ const MainLayout = ({ children }) => {
 
         <div className="sidebar-footer">
           <div className="admin-profile">
-            <div className="admin-avatar">{user?.name?.charAt(0) || 'A'}</div>
+            <div className="admin-avatar">
+              {user?.profileImage ? (
+                <img
+                  src={getProductImageUrl(user.profileImage)}
+                  alt={user.name || 'Admin'}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                user?.name?.charAt(0) || 'A'
+              )}
+            </div>
             <div className="admin-details">
               <span className="admin-name">{user?.name || 'Saleiz Admin'}</span>
               <span className="admin-role">{user?.role || 'Owner'}</span>

@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-router.get('/profile', (req, res) => {
-  res.json({ message: 'GET /api/users/profile route placeholder' });
-});
+const adminController = require('../controllers/admin.controller');
+const { protect } = require('../middleware/auth.middleware');
 
-router.put('/profile', (req, res) => {
-  res.json({ message: 'PUT /api/users/profile route placeholder' });
-});
+router.get('/profile', protect, adminController.getProfile);
+router.put('/profile', protect, adminController.updateProfile);
+router.patch('/profile', protect, adminController.updateProfile);
 
 module.exports = router;

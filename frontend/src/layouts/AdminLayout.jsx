@@ -19,6 +19,7 @@ import {
   User,
   ChevronDown
 } from 'lucide-react';
+import { getProductImageUrl } from '../utils/helpers';
 import './AdminLayout.css';
 
 const AdminLayout = ({ children }) => {
@@ -177,8 +178,16 @@ const AdminLayout = ({ children }) => {
                 aria-expanded={isDropdownOpen}
               >
                 <div className="profile-avatar">
-                   {user?.name?.charAt(0) || 'S'}
-                 </div>
+                  {user?.profileImage ? (
+                    <img
+                      src={getProductImageUrl(user.profileImage)}
+                      alt={user.name || 'Admin'}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    user?.name?.charAt(0) || 'S'
+                  )}
+                </div>
                  <div className="profile-text-stack">
                    <span className="profile-name">{user?.name || 'Saleiz Admin'}</span>
                    <span className="profile-role">Administrator</span>

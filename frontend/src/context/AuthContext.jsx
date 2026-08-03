@@ -77,6 +77,18 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('saleiz_user');
   }, []);
 
+  const updateUser = useCallback((updatedFields) => {
+    setUser(prev => {
+      const updated = { ...prev, ...updatedFields };
+      if (localStorage.getItem('saleiz_user')) {
+        localStorage.setItem('saleiz_user', JSON.stringify(updated));
+      } else if (sessionStorage.getItem('saleiz_user')) {
+        sessionStorage.setItem('saleiz_user', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
   const isAuthenticated = useMemo(() => !!token, [token]);
 
   const value = useMemo(() => ({
@@ -85,8 +97,9 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     authLoading,
     login,
-    logout
-  }), [user, token, isAuthenticated, authLoading, login, logout]);
+    logout,
+    updateUser
+  }), [user, token, isAuthenticated, authLoading, login, logout, updateUser]);
 
   return (
     <AuthContext.Provider value={value}>

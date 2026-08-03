@@ -47,7 +47,8 @@ const login = async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role === 'admin' ? 'Owner' : user.role
+        role: user.role === 'admin' ? 'Owner' : user.role,
+        profileImage: user.profile_image || null
       }
     });
   } catch (error) {

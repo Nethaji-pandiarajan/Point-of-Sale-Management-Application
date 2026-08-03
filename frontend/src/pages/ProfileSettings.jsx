@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Card, { CardHeader, CardTitle, CardDescription, CardBody, CardFooter } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import useToast from '../hooks/useToast';
 import useAuth from '../hooks/useAuth';
-import { getProfile, updateProfile, changePassword, getRestaurantSettings, updateRestaurantSettings } from '../services/admin';
+import { getProfile, updateProfile, changePassword, getRestaurantSettings, updateRestaurantSettings, uploadProfilePhoto } from '../services/admin';
+import { getProductImageUrl } from '../utils/helpers';
 import { User, Store, ShieldAlert, KeyRound, Mail, Phone, Clock, MapPin, Camera } from 'lucide-react';
 import './ProfileSettings.css';
 
 const ProfileSettings = () => {
   const { addToast } = useToast();
-  const { logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   
   // Tab State
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'password' | 'settings'
@@ -21,8 +22,12 @@ const ProfileSettings = () => {
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPhone, setAdminPhone] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profileErrors, setProfileErrors] = useState({});
   const [submittingProfile, setSubmittingProfile] = useState(false);
+
+  const fileInputRef = useRef(null);
 
   // Tab 2: Change Password State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -53,6 +58,7 @@ const ProfileSettings = () => {
         setAdminName(profile.name);
         setAdminEmail(profile.email);
         setAdminPhone(profile.phone || '');
+        setProfileImage(profile.profileImage || profile.profile_image || null);
 
         // Populate settings
         setRestaurantName(settings.name);
@@ -68,6 +74,55 @@ const ProfileSettings = () => {
     
     loadAllSettings();
   }, [addToast]);
+
+  // Handle Photo Selection & Upload
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 1. File Type Validation
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    const allowedExts = ['.png', '.jpg', '.jpeg', '.webp'];
+    const fileExt = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+
+    if (!allowedTypes.includes(file.type.toLowerCase()) && !allowedExts.includes(fileExt)) {
+      addToast('Unsupported file type. Only PNG, JPEG, JPG, and WEBP images are allowed.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    // 2. File Size Validation (Max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      addToast('File size exceeds 2MB limit. Please upload a smaller image.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await uploadProfilePhoto(formData);
+      
+      const newImageUrl = res.imageUrl || res.data?.profileImage;
+      setProfileImage(newImageUrl);
+      
+      // Update global AuthContext user
+      if (updateUser) {
+        updateUser({ profileImage: newImageUrl });
+      }
+
+      addToast(res.message || 'Profile image updated successfully', 'success');
+    } catch (err) {
+      addToast(err.message || 'Failed to upload profile photo', 'error');
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Tab 1 Validate & Save Profile
   const validateProfile = () => {
@@ -101,12 +156,20 @@ const ProfileSettings = () => {
         email: adminEmail,
         phone: adminPhone
       });
+
+      setAdminName(updated.name);
+      setAdminEmail(updated.email);
+      setAdminPhone(updated.phone || '');
+
+      if (updateUser) {
+        updateUser({
+          name: updated.name,
+          email: updated.email,
+          phone: updated.phone || ''
+        });
+      }
+
       addToast('Admin profile details updated successfully', 'success');
-      
-      // Update global user values if needed (normally done via re-authenticating or context state syncing, local update suffices here)
-      const cachedSession = localStorage.getItem('saleiz_user') ? localStorage : sessionStorage;
-      const userObj = JSON.parse(cachedSession.getItem('saleiz_user') || '{}');
-      cachedSession.setItem('saleiz_user', JSON.stringify({ ...userObj, name: updated.name, email: updated.email }));
     } catch (err) {
       addToast(err.message || 'Failed to update admin profile', 'error');
     } finally {
@@ -247,14 +310,41 @@ const ProfileSettings = () => {
               
               {/* Photo Upload layout details */}
               <div className="photo-upload-section">
-                <div className="avatar-circle-placeholder">
-                  {adminName ? adminName.charAt(0) : 'A'}
-                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  style={{ display: 'none' }}
+                  onChange={handlePhotoSelect}
+                />
+                
+                {profileImage ? (
+                  <img
+                    src={getProductImageUrl(profileImage)}
+                    alt={adminName || "Profile Avatar"}
+                    className="avatar-circle-placeholder"
+                    style={{ objectFit: 'cover', border: '2px solid var(--color-primary)' }}
+                  />
+                ) : (
+                  <div className="avatar-circle-placeholder">
+                    {adminName ? adminName.charAt(0).toUpperCase() : 'A'}
+                  </div>
+                )}
+
                 <div className="avatar-upload-info">
                   <h4>Profile Image</h4>
-                  <p>PNG or JPG formats up to 2MB. Camera triggers will link to backend files.</p>
-                  <Button variant="ghost" size="sm" icon={Camera} style={{ marginTop: '6px' }} onClick={() => addToast('Media upload currently disabled.', 'info')}>
-                    Upload Photo
+                  <p>PNG, JPG, JPEG, or WEBP formats up to 2MB. Stored securely on server.</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    icon={Camera}
+                    style={{ marginTop: '6px' }}
+                    onClick={() => fileInputRef.current?.click()}
+                    isLoading={uploadingPhoto}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? 'Uploading...' : 'Upload Photo'}
                   </Button>
                 </div>
               </div>

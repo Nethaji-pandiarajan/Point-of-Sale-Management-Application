@@ -33,3 +33,11 @@ export const updateRestaurantSettings = async (data) => {
   });
   return response.data;
 };
+
+export const uploadProfilePhoto = async (formData) => {
+  const response = await fetchFromApi('/profile/upload-photo', {
+    method: 'POST',
+    body: formData
+  });
+  return response;
+};
