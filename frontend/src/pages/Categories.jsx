@@ -14,6 +14,7 @@ import { getCategories, createCategory, updateCategory, deleteCategory } from '.
 import { Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
 import IconPickerModal from '../components/ui/IconPickerModal';
 import { getIconEmoji, getIconLabel } from '../utils/icons';
+import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
 
 const Categories = () => {
   const { addToast } = useToast();
@@ -195,12 +196,8 @@ const Categories = () => {
         </Button>
       </div>
 
-      {/* Primary listings block */}
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-          <Spinner size="lg" />
-        </div>
-      ) : errorState ? (
+      {/* Advanced Enterprise Data Table */}
+      {errorState ? (
         <Card>
           <CardBody style={{ textAlign: 'center', padding: '40px' }}>
             <p className="text-secondary" style={{ marginBottom: '16px' }}>{errorState}</p>
@@ -209,82 +206,106 @@ const Categories = () => {
             </Button>
           </CardBody>
         </Card>
-      ) : categories.length === 0 ? (
-        <EmptyState
-          title="No Categories Available"
-          description="Create custom groups to organize your food and beverage menu list."
-          icon={Plus}
-          actionLabel="Add First Category"
-          onActionClick={handleOpenAddModal}
-        />
       ) : (
-        <Card>
-          <CardBody style={{ padding: '0px' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead style={{ width: '80px', textAlign: 'center' }}>Icon</TableHead>
-                  <TableHead>Category Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Products Count</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Status</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((cat) => (
-                  <TableRow key={cat.id}>
-                    <TableCell style={{ fontSize: '1.6rem', textAlign: 'center' }}>
-                      {getIconEmoji(cat.icon)}
-                    </TableCell>
-                    <TableCell style={{ fontWeight: '600' }}>
-                      {cat.name}
-                    </TableCell>
-                    <TableCell style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-                      {cat.description || 'No description provided.'}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center', fontWeight: '500' }}>
-                      {cat.productCount || 0}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      <Badge variant={cat.status === 'active' ? 'success' : 'secondary'}>
-                        {cat.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleStatus(cat)}
-                        >
-                          {cat.status === 'active' ? 'Disable' : 'Enable'}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Edit}
-                          onClick={() => handleOpenEditModal(cat)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Trash2}
-                          className="text-danger"
-                          onClick={() => handleDeleteCategory(cat)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
+        <AdvancedDataTable
+          tableKey="categories"
+          data={categories}
+          loading={loading}
+          searchFields={['name', 'description']}
+          searchPlaceholder="Search categories... (Ctrl+F)"
+          onRefresh={fetchCategoriesList}
+          emptyStateTitle="No Categories Found"
+          emptyStateDescription="Create custom groups to organize your food and beverage menu."
+          filterConfigs={[
+            {
+              key: 'status',
+              label: 'Publishing Status',
+              type: 'select',
+              options: [
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+              ]
+            }
+          ]}
+          columns={[
+            {
+              key: 'icon',
+              title: 'Icon',
+              width: '70px',
+              sortable: false,
+              render: (cat) => (
+                <span style={{ fontSize: '1.5rem', display: 'block', textAlign: 'center' }}>
+                  {getIconEmoji(cat.icon)}
+                </span>
+              )
+            },
+            {
+              key: 'name',
+              title: 'Category Name',
+              sortable: true,
+              render: (cat) => <span style={{ fontWeight: '600' }}>{cat.name}</span>
+            },
+            {
+              key: 'description',
+              title: 'Description',
+              sortable: true,
+              render: (cat) => (
+                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                  {cat.description || 'No description provided.'}
+                </span>
+              )
+            },
+            {
+              key: 'productCount',
+              title: 'Products Count',
+              sortable: true,
+              render: (cat) => (
+                <span style={{ fontWeight: '600', display: 'block', textAlign: 'center' }}>
+                  {cat.productCount || 0}
+                </span>
+              )
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (cat) => (
+                <Badge variant={cat.status === 'active' ? 'success' : 'secondary'}>
+                  {cat.status}
+                </Badge>
+              )
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: '180px',
+              render: (cat) => (
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleStatus(cat)}
+                  >
+                    {cat.status === 'active' ? 'Disable' : 'Enable'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Edit}
+                    onClick={() => handleOpenEditModal(cat)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Trash2}
+                    className="text-danger"
+                    onClick={() => handleDeleteCategory(cat)}
+                  />
+                </div>
+              )
+            }
+          ]}
+        />
       )}
 
       {/* Add / Edit Category Dialog Modal */}

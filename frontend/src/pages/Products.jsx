@@ -13,6 +13,7 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '../ser
 import { getCategories } from '../services/categories';
 import { Plus, Edit, Trash2, Search, RefreshCw, FilterX } from 'lucide-react';
 import { formatCurrency, getProductImageUrl } from '../utils/helpers';
+import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
 import { useNavigate } from 'react-router-dom';
 import './Products.css';
 
@@ -329,68 +330,8 @@ const Products = () => {
         </Button>
       </div>
 
-      {/* Filter panel */}
-      <div className="products-filter-panel">
-        <div className="search-field-container">
-          <label htmlFor="search-input">Search Dish Name</label>
-          <div className="search-input-wrapper">
-            <Search className="search-input-icon" size={18} />
-            <input
-              id="search-input"
-              type="text"
-              placeholder="e.g. Classic Burger..."
-              value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Select
-          label="Category Filter"
-          options={categoryOptions}
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-        />
-
-        <Select
-          label="Status Filter"
-          options={availabilityOptions}
-          value={filterAvailability}
-          onChange={(e) => setFilterAvailability(e.target.value)}
-        />
-      </div>
-
-      {/* Primary listings grid */}
-      {loading ? (
-        <Card>
-          <CardBody style={{ padding: '0px' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead style={{ width: '80px' }}>Image</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[1, 2, 3, 4, 5].map((idx) => (
-                  <TableRow key={idx} className="skeleton-row">
-                    <TableCell><div className="skeleton-cell-block circle"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block" style={{ marginLeft: 'auto' }}></div></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
-      ) : errorState ? (
+      {/* Advanced Enterprise Data Table */}
+      {errorState ? (
         <Card>
           <CardBody style={{ textAlign: 'center', padding: '40px' }}>
             <p className="text-secondary" style={{ marginBottom: '16px' }}>{errorState}</p>
@@ -399,101 +340,130 @@ const Products = () => {
             </Button>
           </CardBody>
         </Card>
-      ) : products.length === 0 ? (
-        <EmptyState
-          title={filterSearch || filterCategory || filterAvailability ? "No Matching Products" : "No Products Available"}
-          description={filterSearch || filterCategory || filterAvailability ? "No dishes match your active search terms or category filter rules." : "Add food items, sodas, and desserts to the digital menu."}
-          icon={FilterX}
-          actionLabel={filterSearch || filterCategory || filterAvailability ? "Clear Filter Options" : "Create Product"}
-          onActionClick={filterSearch || filterCategory || filterAvailability ? clearFilters : handleOpenAddModal}
-        />
       ) : (
-        <Card>
-          <CardBody style={{ padding: '0px' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead style={{ width: '80px', textAlign: 'center' }}>Image</TableHead>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Status</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((prod) => (
-                  <TableRow key={prod.id}>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      {prod.image && (prod.image.startsWith('data:') || prod.image.startsWith('http') || prod.image.startsWith('/') || prod.image.startsWith('blob:')) ? (
-                        <img 
-                          src={getProductImageUrl(prod.image)} 
-                          alt={prod.name} 
-                          style={{ 
-                            width: '40px', 
-                            height: '40px', 
-                            borderRadius: 'var(--radius-sm)', 
-                            objectFit: 'cover',
-                            display: 'block',
-                            margin: '0 auto',
-                            border: '1px solid var(--color-border)'
-                          }} 
-                        />
-                      ) : (
-                        <span style={{ fontSize: '1.6rem' }}>{prod.image || '🍔'}</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: '600' }}>{prod.name}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                          {prod.description || 'No description provided.'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell style={{ fontWeight: '500' }}>
-                      {prod.categoryName}
-                    </TableCell>
-                    <TableCell style={{ fontWeight: '600' }}>
-                      {formatCurrency(prod.price)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      {getAvailabilityBadge(prod.availability)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleAvailability(prod)}
-                        >
-                          {prod.availability === 'available' ? 'Set Out of Stock' : 'Set Available'}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Edit}
-                          onClick={() => handleOpenEditModal(prod)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Trash2}
-                          className="text-danger"
-                          onClick={() => handleDeleteProduct(prod)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
+        <AdvancedDataTable
+          tableKey="products"
+          data={products}
+          loading={loading}
+          searchFields={['name', 'description', 'categoryName']}
+          searchPlaceholder="Search food dishes or categories... (Ctrl+F)"
+          onRefresh={fetchProductsList}
+          emptyStateTitle="No Products Found"
+          emptyStateDescription="No dishes match your active search terms or category filter rules."
+          filterConfigs={[
+            {
+              key: 'categoryId',
+              label: 'Category',
+              type: 'select',
+              options: categories.map(c => ({ value: c.id, label: c.name }))
+            },
+            {
+              key: 'availability',
+              label: 'Availability',
+              type: 'select',
+              options: [
+                { value: 'available', label: 'Available' },
+                { value: 'out_of_stock', label: 'Out of Stock' }
+              ]
+            },
+            {
+              key: 'priceRange',
+              label: 'Price Range (₹)',
+              type: 'range',
+              minKey: 'prodMinPrice',
+              maxKey: 'prodMaxPrice'
+            }
+          ]}
+          columns={[
+            {
+              key: 'image',
+              title: 'Image',
+              width: '80px',
+              sortable: false,
+              render: (prod) => (
+                <div style={{ textAlign: 'center' }}>
+                  {prod.image && (prod.image.startsWith('data:') || prod.image.startsWith('http') || prod.image.startsWith('/') || prod.image.startsWith('blob:')) ? (
+                    <img 
+                      src={getProductImageUrl(prod.image)} 
+                      alt={prod.name} 
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: 'var(--radius-sm)', 
+                        objectFit: 'cover',
+                        display: 'block',
+                        margin: '0 auto',
+                        border: '1px solid var(--color-border)'
+                      }} 
+                    />
+                  ) : (
+                    <span style={{ fontSize: '1.5rem' }}>{prod.image || '🍔'}</span>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'name',
+              title: 'Product Name',
+              sortable: true,
+              render: (prod) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontWeight: '600' }}>{prod.name}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {prod.description || 'No description provided.'}
+                  </span>
+                </div>
+              )
+            },
+            {
+              key: 'categoryName',
+              title: 'Category',
+              sortable: true,
+              render: (prod) => <span style={{ fontWeight: '500' }}>{prod.categoryName}</span>
+            },
+            {
+              key: 'price',
+              title: 'Price',
+              sortable: true,
+              render: (prod) => <span style={{ fontWeight: '600' }}>{formatCurrency(prod.price)}</span>
+            },
+            {
+              key: 'availability',
+              title: 'Availability',
+              sortable: true,
+              render: (prod) => getAvailabilityBadge(prod.availability)
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: '210px',
+              render: (prod) => (
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleAvailability(prod)}
+                  >
+                    {prod.availability === 'available' ? 'Mark Out of Stock' : 'Mark Available'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Edit}
+                    onClick={() => handleOpenEditModal(prod)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Trash2}
+                    className="text-danger"
+                    onClick={() => handleDeleteProduct(prod)}
+                  />
+                </div>
+              )
+            }
+          ]}
+        />
       )}
 
       {/* Add / Edit Product Modal */}

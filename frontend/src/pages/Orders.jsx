@@ -12,6 +12,7 @@ import useConfirm from '../hooks/useConfirm';
 import { getOrders, getOrder, updateOrderStatus } from '../services/orders';
 import { Search, Eye, RefreshCw, Calendar, ChevronLeft, ChevronRight, XCircle, CheckCircle2, Play } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
 import './Orders.css';
 
 const Orders = () => {
@@ -164,81 +165,8 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* Filters Dashboard Panel */}
-      <div className="orders-filter-container">
-        <div className="search-field-container">
-          <label htmlFor="search-order">Search Orders</label>
-          <div className="search-input-wrapper">
-            <Search className="search-input-icon" size={18} />
-            <input
-              id="search-order"
-              type="text"
-              placeholder="Order ID, customer name..."
-              value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Select
-          label="Status State"
-          options={statusOptions}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        />
-
-        <div className="date-filter-field">
-          <label>Start Date</label>
-          <input
-            type="date"
-            value={filterStartDate}
-            onChange={(e) => setFilterStartDate(e.target.value)}
-          />
-        </div>
-
-        <div className="date-filter-field">
-          <label>End Date</label>
-          <input
-            type="date"
-            value={filterEndDate}
-            onChange={(e) => setFilterEndDate(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Main listings segment */}
-      {loading ? (
-        <Card>
-          <CardBody style={{ padding: '0px' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items Ordered</TableHead>
-                  <TableHead>Total Cost</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date / Time</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[1, 2, 3, 4].map(idx => (
-                  <TableRow key={idx} className="skeleton-row">
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block short"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block"></div></TableCell>
-                    <TableCell><div className="skeleton-cell-block" style={{ marginLeft: 'auto' }}></div></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
-      ) : errorState ? (
+      {/* Advanced Enterprise Data Table */}
+      {errorState ? (
         <Card>
           <CardBody style={{ textAlign: 'center', padding: '40px' }}>
             <p className="text-secondary" style={{ marginBottom: '16px' }}>{errorState}</p>
@@ -247,164 +175,129 @@ const Orders = () => {
             </Button>
           </CardBody>
         </Card>
-      ) : orders.length === 0 ? (
-        <EmptyState
-          title="No Orders Found"
-          description="We couldn't find any transaction matching your query filters."
-          icon={Calendar}
-          actionLabel="Clear Filters"
-          onActionClick={() => {
-            setFilterSearch('');
-            setFilterStatus('');
-            setFilterStartDate('');
-            setFilterEndDate('');
-          }}
-        />
       ) : (
-        <>
-          {/* Desktop Table View (Hidden on Mobile) */}
-          <Card>
-            <CardBody style={{ padding: '0px' }}>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Items Summary</TableHead>
-                    <TableHead>Total Amount</TableHead>
-                    <TableHead style={{ textAlign: 'center' }}>Status</TableHead>
-                    <TableHead>Order Time</TableHead>
-                    <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map((ord) => (
-                    <TableRow key={ord.id}>
-                      <TableCell style={{ fontWeight: '600' }}>{ord.id}</TableCell>
-                      <TableCell>{ord.customerName}</TableCell>
-                      <TableCell style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                        {getItemsSummary(ord.items)}
-                      </TableCell>
-                      <TableCell style={{ fontWeight: '600' }}>
-                        {formatCurrency(ord.totalAmount)}
-                      </TableCell>
-                      <TableCell style={{ textAlign: 'center' }}>
-                        {getStatusBadge(ord.status)}
-                      </TableCell>
-                      <TableCell style={{ fontSize: '0.875rem' }}>
-                        {new Date(ord.createdAt).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit'
-                        })}
-                      </TableCell>
-                      <TableCell style={{ textAlign: 'right' }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Eye}
-                          onClick={() => handleOpenDetails(ord.id)}
-                        >
-                          View Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              
-              {/* Desktop Pagination Footer */}
-              <div className="pagination-footer">
-                <span className="pagination-info">
-                  Showing <strong>{orders.length}</strong> of <strong>{totalCount}</strong> orders
-                </span>
-                <div className="pagination-controls">
-                  <button
-                    className="pagination-page-btn"
-                    onClick={() => handlePageChange(page - 1)}
-                    disabled={page === 1}
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      className={`pagination-page-btn ${p === page ? 'active' : ''}`}
-                      onClick={() => handlePageChange(p)}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    className="pagination-page-btn"
-                    onClick={() => handlePageChange(page + 1)}
-                    disabled={page === totalPages}
-                    aria-label="Next page"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Mobile Stacked Card View (Hidden on Desktop) */}
-          <div className="mobile-orders-grid">
-            {orders.map((ord) => (
-              <div key={ord.id} className="order-mobile-card">
-                <div className="mobile-card-row">
-                  <span className="mobile-card-id">{ord.id}</span>
-                  {getStatusBadge(ord.status)}
-                </div>
-                <div className="mobile-card-row">
+        <AdvancedDataTable
+          tableKey="orders"
+          data={orders}
+          loading={loading}
+          searchFields={['id', 'orderNo', 'customerName', 'email', 'phone']}
+          searchPlaceholder="Search order ID or customer name... (Ctrl+F)"
+          onRefresh={() => fetchOrders(page)}
+          emptyStateTitle="No Orders Found"
+          emptyStateDescription="We couldn't find any transaction matching your query filters."
+          serverSide={true}
+          serverTotalItems={totalCount}
+          serverPage={page}
+          serverLimit={limit}
+          onServerPageChange={handlePageChange}
+          onServerSearchChange={(val) => {
+            setFilterSearch(val);
+            setPage(1);
+          }}
+          onServerFilterChange={(newFilters) => {
+            setFilterStatus(newFilters.status || '');
+            setFilterStartDate(newFilters.ordStartDate || '');
+            setFilterEndDate(newFilters.ordEndDate || '');
+            setPage(1);
+          }}
+          filterConfigs={[
+            {
+              key: 'status',
+              label: 'Order Status',
+              type: 'select',
+              options: [
+                { value: 'pending', label: 'Pending' },
+                { value: 'preparing', label: 'Preparing' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]
+            },
+            {
+              key: 'dateRange',
+              label: 'Date Range',
+              type: 'dateRange',
+              startKey: 'ordStartDate',
+              endKey: 'ordEndDate'
+            }
+          ]}
+          columns={[
+            {
+              key: 'id',
+              title: 'Order ID',
+              sortable: true,
+              render: (ord) => <span style={{ fontWeight: '600' }}>#{ord.orderNo || ord.id}</span>
+            },
+            {
+              key: 'customerName',
+              title: 'Customer',
+              sortable: true,
+              render: (ord) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontWeight: '500' }}>{ord.customerName}</span>
-                  <span style={{ fontWeight: '600' }}>{formatCurrency(ord.totalAmount)}</span>
+                  {ord.phone && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                      {ord.phone}
+                    </span>
+                  )}
                 </div>
-                <div className="mobile-card-items">
+              )
+            },
+            {
+              key: 'itemsSummary',
+              title: 'Items Summary',
+              sortable: false,
+              render: (ord) => (
+                <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
                   {getItemsSummary(ord.items)}
-                </div>
-                <div className="mobile-card-row" style={{ marginTop: '4px', borderTop: '1px solid var(--color-border)', paddingTop: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
-                    {new Date(ord.createdAt).toLocaleDateString()} at {new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                </span>
+              )
+            },
+            {
+              key: 'totalAmount',
+              title: 'Total Amount',
+              sortable: true,
+              render: (ord) => <span style={{ fontWeight: '600' }}>{formatCurrency(ord.totalAmount)}</span>
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (ord) => getStatusBadge(ord.status)
+            },
+            {
+              key: 'createdAt',
+              title: 'Order Time',
+              sortable: true,
+              render: (ord) => (
+                <span style={{ fontSize: '0.8125rem' }}>
+                  {new Date(ord.createdAt).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}
+                </span>
+              )
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: '130px',
+              render: (ord) => (
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button
                     variant="ghost"
                     size="sm"
                     icon={Eye}
                     onClick={() => handleOpenDetails(ord.id)}
                   >
-                    Details
+                    View Details
                   </Button>
                 </div>
-              </div>
-            ))}
-
-            {/* Mobile Pagination Footer */}
-            <div className="pagination-footer" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-              <div className="pagination-controls" style={{ margin: '0 auto' }}>
-                <button
-                  className="pagination-page-btn"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span style={{ fontSize: '0.875rem', padding: '0 8px' }}>
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  className="pagination-page-btn"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+              )
+            }
+          ]}
+        />
       )}
 
       {/* Order Details Modal Shell */}

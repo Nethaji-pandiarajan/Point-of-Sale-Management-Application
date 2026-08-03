@@ -13,6 +13,7 @@ import useConfirm from '../hooks/useConfirm';
 import { getCustomers, getCustomer, updateCustomerStatus } from '../services/customers';
 import { Search, Eye, ShieldAlert, ShieldCheck, RefreshCw, UserCheck } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
 
 const Customers = () => {
   const { addToast } = useToast();
@@ -131,47 +132,8 @@ const Customers = () => {
         </div>
       </div>
 
-      {/* Filter panel */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '16px',
-        backgroundColor: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-md)',
-        padding: '16px',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        <div className="search-field-container">
-          <label htmlFor="search-customer" style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '4px', display: 'block' }}>
-            Search customer details
-          </label>
-          <div className="search-input-wrapper">
-            <Search className="search-input-icon" size={18} />
-            <input
-              id="search-customer"
-              type="text"
-              placeholder="Search by name, email, or phone number..."
-              value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Select
-          label="Filter by Status"
-          options={statusOptions}
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        />
-      </div>
-
-      {/* Main content table */}
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-          <Spinner size="lg" />
-        </div>
-      ) : errorState ? (
+      {/* Advanced Enterprise Data Table */}
+      {errorState ? (
         <Card>
           <CardBody style={{ textAlign: 'center', padding: '40px' }}>
             <p className="text-secondary" style={{ marginBottom: '16px' }}>{errorState}</p>
@@ -180,79 +142,102 @@ const Customers = () => {
             </Button>
           </CardBody>
         </Card>
-      ) : customers.length === 0 ? (
-        <EmptyState
-          title="No customers found"
-          description={filterSearch || filterStatus ? "No customer records matched your query filters." : "Guests who register or order will appear here."}
-          icon={UserCheck}
-        />
       ) : (
-        <Card>
-          <CardBody style={{ padding: '0px' }}>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer Name</TableHead>
-                  <TableHead>Email / Phone</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Total Orders</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Total Spent</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Status</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((cust) => (
-                  <TableRow key={cust.id}>
-                    <TableCell style={{ fontWeight: '600' }}>
-                      {cust.name}
-                    </TableCell>
-                    <TableCell>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span>{cust.email}</span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
-                          {cust.phone}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center', fontWeight: '500' }}>
-                      {cust.totalOrders}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right', fontWeight: '600' }}>
-                      {formatCurrency(cust.totalSpent)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      <Badge variant={cust.status === 'active' ? 'success' : 'error'}>
-                        {cust.status === 'active' ? 'Active' : 'Blocked'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={Eye}
-                          onClick={() => handleOpenDetails(cust.id)}
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={cust.status === 'active' ? ShieldAlert : ShieldCheck}
-                          className={cust.status === 'active' ? 'text-danger' : 'text-success'}
-                          onClick={() => handleToggleStatus(cust)}
-                          disabled={statusSubmitting}
-                        >
-                          {cust.status === 'active' ? 'Block' : 'Unblock'}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
+        <AdvancedDataTable
+          tableKey="customers"
+          data={customers}
+          loading={loading}
+          searchFields={['name', 'email', 'phone']}
+          searchPlaceholder="Search customer name, email, or phone... (Ctrl+F)"
+          onRefresh={fetchCustomers}
+          emptyStateTitle="No Customers Found"
+          emptyStateDescription="No customer records matched your query filters or guest directory."
+          filterConfigs={[
+            {
+              key: 'status',
+              label: 'Account Status',
+              type: 'select',
+              options: [
+                { value: 'active', label: 'Active' },
+                { value: 'blocked', label: 'Blocked' }
+              ]
+            }
+          ]}
+          columns={[
+            {
+              key: 'name',
+              title: 'Customer Name',
+              sortable: true,
+              render: (cust) => <span style={{ fontWeight: '600' }}>{cust.name}</span>
+            },
+            {
+              key: 'email',
+              title: 'Email / Phone',
+              sortable: true,
+              render: (cust) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span>{cust.email}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {cust.phone || 'No phone'}
+                  </span>
+                </div>
+              )
+            },
+            {
+              key: 'totalOrders',
+              title: 'Total Orders',
+              sortable: true,
+              render: (cust) => (
+                <span style={{ fontWeight: '600', display: 'block', textAlign: 'center' }}>
+                  {cust.totalOrders || 0}
+                </span>
+              )
+            },
+            {
+              key: 'totalSpent',
+              title: 'Total Spent',
+              sortable: true,
+              render: (cust) => <span style={{ fontWeight: '600' }}>{formatCurrency(cust.totalSpent)}</span>
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (cust) => (
+                <Badge variant={cust.status === 'active' ? 'success' : 'error'}>
+                  {cust.status === 'active' ? 'Active' : 'Blocked'}
+                </Badge>
+              )
+            },
+            {
+              key: 'actions',
+              title: 'Actions',
+              width: '210px',
+              render: (cust) => (
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Eye}
+                    onClick={() => handleOpenDetails(cust.id)}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={cust.status === 'active' ? ShieldAlert : ShieldCheck}
+                    className={cust.status === 'active' ? 'text-danger' : 'text-success'}
+                    onClick={() => handleToggleStatus(cust)}
+                    disabled={statusSubmitting}
+                  >
+                    {cust.status === 'active' ? 'Block' : 'Unblock'}
+                  </Button>
+                </div>
+              )
+            }
+          ]}
+        />
       )}
 
       {/* Customer Details Drawer Modal */}
