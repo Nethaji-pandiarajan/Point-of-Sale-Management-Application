@@ -41,3 +41,8 @@ export const uploadProfilePhoto = async (formData) => {
   });
   return response;
 };
+
+export const getDashboardStats = async () => {
+  const response = await fetchFromApi('/admin/dashboard');
+  return response.data;
+};

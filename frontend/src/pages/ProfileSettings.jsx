@@ -38,9 +38,18 @@ const ProfileSettings = () => {
 
   // Tab 3: Restaurant Settings State
   const [restaurantName, setRestaurantName] = useState('');
+  const [restaurantLogo, setRestaurantLogo] = useState('');
   const [restaurantAddress, setRestaurantAddress] = useState('');
   const [restaurantPhone, setRestaurantPhone] = useState('');
-  const [restaurantHours, setRestaurantHours] = useState('');
+  const [restaurantEmail, setRestaurantEmail] = useState('');
+  const [taxNumber, setTaxNumber] = useState('');
+  const [currency, setCurrency] = useState('$');
+  const [taxPercentage, setTaxPercentage] = useState(5.00);
+  const [openingTime, setOpeningTime] = useState('09:00 AM');
+  const [closingTime, setClosingTime] = useState('10:00 PM');
+  const [receiptFooter, setReceiptFooter] = useState('');
+  const [restaurantStatus, setRestaurantStatus] = useState('open');
+
   const [settingsErrors, setSettingsErrors] = useState({});
   const [submittingSettings, setSubmittingSettings] = useState(false);
 
@@ -61,10 +70,18 @@ const ProfileSettings = () => {
         setProfileImage(profile.profileImage || profile.profile_image || null);
 
         // Populate settings
-        setRestaurantName(settings.name);
-        setRestaurantAddress(settings.address);
-        setRestaurantPhone(settings.phone);
-        setRestaurantHours(settings.hours);
+        setRestaurantName(settings.name || '');
+        setRestaurantLogo(settings.logo || '');
+        setRestaurantAddress(settings.address || '');
+        setRestaurantPhone(settings.phone || '');
+        setRestaurantEmail(settings.email || '');
+        setTaxNumber(settings.taxNumber || '');
+        setCurrency(settings.currency || '$');
+        setTaxPercentage(settings.taxPercentage || 5.00);
+        setOpeningTime(settings.openingTime || '09:00 AM');
+        setClosingTime(settings.closingTime || '10:00 PM');
+        setReceiptFooter(settings.receiptFooter || '');
+        setRestaurantStatus(settings.status || 'open');
       } catch (err) {
         addToast('Failed to fetch settings from server', 'error');
       } finally {
@@ -234,7 +251,14 @@ const ProfileSettings = () => {
     if (!restaurantName.trim()) errors.restaurantName = 'Restaurant name is required';
     if (!restaurantAddress.trim()) errors.restaurantAddress = 'Operating location address is required';
     if (!restaurantPhone.trim()) errors.restaurantPhone = 'Contact phone is required';
-    if (!restaurantHours.trim()) errors.restaurantHours = 'Store hours are required';
+    if (!restaurantEmail.trim()) {
+      errors.restaurantEmail = 'Email address is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(restaurantEmail)) {
+        errors.restaurantEmail = 'Please provide a valid email format';
+      }
+    }
     
     setSettingsErrors(errors);
     return Object.keys(errors).length === 0;
@@ -245,7 +269,7 @@ const ProfileSettings = () => {
     if (submittingSettings) return;
 
     if (!validateSettings()) {
-      addToast('Complete all settings requirements', 'warning');
+      addToast('Please fill all required restaurant settings fields', 'warning');
       return;
     }
 
@@ -253,13 +277,21 @@ const ProfileSettings = () => {
     try {
       await updateRestaurantSettings({
         name: restaurantName,
+        logo: restaurantLogo,
         address: restaurantAddress,
         phone: restaurantPhone,
-        hours: restaurantHours
+        email: restaurantEmail,
+        taxNumber,
+        currency,
+        taxPercentage,
+        openingTime,
+        closingTime,
+        receiptFooter,
+        status: restaurantStatus
       });
-      addToast('Restaurant configuration settings saved successfully', 'success');
+      addToast('Restaurant configuration settings saved successfully to database', 'success');
     } catch (err) {
-      addToast(err.message || 'Failed to update store settings', 'error');
+      addToast(err.message || 'Failed to update restaurant settings', 'error');
     } finally {
       setSubmittingSettings(false);
     }
@@ -304,9 +336,9 @@ const ProfileSettings = () => {
           <Card>
             <CardHeader>
               <CardTitle>Account Details</CardTitle>
-              <CardDescription>Coordinate login profile identities</CardDescription>
+              <CardDescription>Coordinate login profile identities and admin contact information</CardDescription>
             </CardHeader>
-            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               {/* Photo Upload layout details */}
               <div className="photo-upload-section">
@@ -339,7 +371,7 @@ const ProfileSettings = () => {
                     variant="ghost"
                     size="sm"
                     icon={Camera}
-                    style={{ marginTop: '6px' }}
+                    style={{ marginTop: '6px', alignSelf: 'flex-start' }}
                     onClick={() => fileInputRef.current?.click()}
                     isLoading={uploadingPhoto}
                     disabled={uploadingPhoto}
@@ -352,7 +384,7 @@ const ProfileSettings = () => {
               <div className="profile-form-grid">
                 <Input
                   label="Administrator Name"
-                  placeholder="e.g. Alex"
+                  placeholder="e.g. John Doe"
                   value={adminName}
                   onChange={(e) => {
                     setAdminName(e.target.value);
@@ -364,33 +396,33 @@ const ProfileSettings = () => {
                   required
                 />
                 <Input
-                  label="Account Email address"
-                  type="email"
-                  placeholder="admin@saleiz.com"
-                  value={adminEmail}
-                  onChange={(e) => {
-                    setAdminEmail(e.target.value);
-                    if (profileErrors.email) setProfileErrors(prev => ({ ...prev, email: '' }));
-                  }}
-                  error={profileErrors.email}
-                  icon={Mail}
+                  label="Contact Phone"
+                  placeholder="e.g. +1 555-0199"
+                  value={adminPhone}
+                  onChange={(e) => setAdminPhone(e.target.value)}
+                  icon={Phone}
                   disabled={submittingProfile}
-                  required
                 />
               </div>
 
               <Input
-                label="Contact Phone (Optional)"
-                placeholder="+1 555-0100"
-                value={adminPhone}
-                onChange={(e) => setAdminPhone(e.target.value)}
-                icon={Phone}
+                label="Email Address (Login Identity)"
+                type="email"
+                placeholder="admin@saleiz.com"
+                value={adminEmail}
+                onChange={(e) => {
+                  setAdminEmail(e.target.value);
+                  if (profileErrors.email) setProfileErrors(prev => ({ ...prev, email: '' }));
+                }}
+                error={profileErrors.email}
+                icon={Mail}
                 disabled={submittingProfile}
+                required
               />
             </CardBody>
-            <CardFooter>
+            <CardFooter style={{ justifyContent: 'flex-end' }}>
               <Button type="submit" variant="primary" isLoading={submittingProfile}>
-                Save Profile
+                Save Profile Changes
               </Button>
             </CardFooter>
           </Card>
@@ -402,14 +434,14 @@ const ProfileSettings = () => {
         <form onSubmit={handleChangePassword}>
           <Card>
             <CardHeader>
-              <CardTitle>Change Login Password</CardTitle>
-              <CardDescription>Revalidate credentials to secure the restaurant system</CardDescription>
+              <CardTitle>Security & Credentials</CardTitle>
+              <CardDescription>Update account authentication passwords securely</CardDescription>
             </CardHeader>
-            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '480px' }}>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <Input
                 label="Current Password"
                 type="password"
-                placeholder="••••••••"
+                placeholder="Enter current password"
                 value={currentPassword}
                 onChange={(e) => {
                   setCurrentPassword(e.target.value);
@@ -421,38 +453,38 @@ const ProfileSettings = () => {
                 required
               />
               
-              <hr style={{ border: '0', height: '1px', backgroundColor: 'var(--color-border)' }} />
-              
-              <Input
-                label="New Password"
-                type="password"
-                placeholder="••••••••"
-                value={newPassword}
-                onChange={(e) => {
-                  setNewPassword(e.target.value);
-                  if (passwordErrors.newPassword) setPasswordErrors(prev => ({ ...prev, newPassword: '' }));
-                }}
-                error={passwordErrors.newPassword}
-                icon={KeyRound}
-                disabled={submittingPassword}
-                required
-              />
-              <Input
-                label="Confirm New Password"
-                type="password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  if (passwordErrors.confirmPassword) setPasswordErrors(prev => ({ ...prev, confirmPassword: '' }));
-                }}
-                error={passwordErrors.confirmPassword}
-                icon={ShieldAlert}
-                disabled={submittingPassword}
-                required
-              />
+              <div className="profile-form-grid">
+                <Input
+                  label="New Password"
+                  type="password"
+                  placeholder="Min. 8 characters"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (passwordErrors.newPassword) setPasswordErrors(prev => ({ ...prev, newPassword: '' }));
+                  }}
+                  error={passwordErrors.newPassword}
+                  icon={ShieldAlert}
+                  disabled={submittingPassword}
+                  required
+                />
+                <Input
+                  label="Confirm New Password"
+                  type="password"
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (passwordErrors.confirmPassword) setPasswordErrors(prev => ({ ...prev, confirmPassword: '' }));
+                  }}
+                  error={passwordErrors.confirmPassword}
+                  icon={ShieldAlert}
+                  disabled={submittingPassword}
+                  required
+                />
+              </div>
             </CardBody>
-            <CardFooter>
+            <CardFooter style={{ justifyContent: 'flex-end' }}>
               <Button type="submit" variant="primary" isLoading={submittingPassword}>
                 Update Password
               </Button>
@@ -463,17 +495,19 @@ const ProfileSettings = () => {
 
       {/* Tab 3: Restaurant Settings Card */}
       {activeTab === 'settings' && (
-        <form onSubmit={handleSaveSettings}>
+        <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* SECTION 1: RESTAURANT INFORMATION */}
           <Card>
             <CardHeader>
-              <CardTitle>Restaurant Settings</CardTitle>
-              <CardDescription>Identity parameters showing on bills, receipts, and menus</CardDescription>
+              <CardTitle>1. Restaurant Information</CardTitle>
+              <CardDescription>Brand identity and primary contact details for guest invoices and headers</CardDescription>
             </CardHeader>
             <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="profile-form-grid">
                 <Input
                   label="Restaurant Name"
-                  placeholder="e.g. Saleiz Gourmet"
+                  placeholder="e.g. Saleiz Gourmet Bistro"
                   value={restaurantName}
                   onChange={(e) => {
                     setRestaurantName(e.target.value);
@@ -485,8 +519,25 @@ const ProfileSettings = () => {
                   required
                 />
                 <Input
+                  label="Business Email Address"
+                  type="email"
+                  placeholder="e.g. contact@saleizbistro.com"
+                  value={restaurantEmail}
+                  onChange={(e) => {
+                    setRestaurantEmail(e.target.value);
+                    if (settingsErrors.restaurantEmail) setSettingsErrors(prev => ({ ...prev, restaurantEmail: '' }));
+                  }}
+                  error={settingsErrors.restaurantEmail}
+                  icon={Mail}
+                  disabled={submittingSettings}
+                  required
+                />
+              </div>
+
+              <div className="profile-form-grid">
+                <Input
                   label="Business Contact Phone"
-                  placeholder="+1 555-0100"
+                  placeholder="e.g. +1 555-0100"
                   value={restaurantPhone}
                   onChange={(e) => {
                     setRestaurantPhone(e.target.value);
@@ -497,11 +548,25 @@ const ProfileSettings = () => {
                   disabled={submittingSettings}
                   required
                 />
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '6px', color: 'var(--color-text-primary)' }}>
+                    Restaurant Operating Status
+                  </label>
+                  <select
+                    className="select-input-field"
+                    value={restaurantStatus}
+                    onChange={(e) => setRestaurantStatus(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '0.875rem' }}
+                  >
+                    <option value="open">🟢 Open for Business</option>
+                    <option value="closed">🔴 Closed Temporarily</option>
+                  </select>
+                </div>
               </div>
 
               <Input
-                label="Business Address location"
-                placeholder="123 Culinary Boulevard"
+                label="Physical Restaurant Address"
+                placeholder="e.g. 123 Culinary Boulevard, Foodville"
                 value={restaurantAddress}
                 onChange={(e) => {
                   setRestaurantAddress(e.target.value);
@@ -512,27 +577,95 @@ const ProfileSettings = () => {
                 disabled={submittingSettings}
                 required
               />
+            </CardBody>
+          </Card>
+
+          {/* SECTION 2: BUSINESS & TAX SETTINGS */}
+          <Card>
+            <CardHeader>
+              <CardTitle>2. Business & Tax Settings</CardTitle>
+              <CardDescription>Configure tax rules, registration identifiers, and default currency</CardDescription>
+            </CardHeader>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="profile-form-grid">
+                <Input
+                  label="GST / Tax Identification Number"
+                  placeholder="e.g. GST123456789"
+                  value={taxNumber}
+                  onChange={(e) => setTaxNumber(e.target.value)}
+                  disabled={submittingSettings}
+                />
+                <Input
+                  label="Currency Symbol"
+                  placeholder="e.g. $ or ₹"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  disabled={submittingSettings}
+                />
+              </div>
 
               <Input
-                label="Operating hours"
-                placeholder="Mon-Sun: 9:00 AM - 10:00 PM"
-                value={restaurantHours}
-                onChange={(e) => {
-                  setRestaurantHours(e.target.value);
-                  if (settingsErrors.restaurantHours) setSettingsErrors(prev => ({ ...prev, restaurantHours: '' }));
-                }}
-                error={settingsErrors.restaurantHours}
-                icon={Clock}
+                label="Tax Percentage (%)"
+                type="number"
+                step="0.01"
+                placeholder="e.g. 5.00"
+                value={taxPercentage}
+                onChange={(e) => setTaxPercentage(e.target.value)}
                 disabled={submittingSettings}
-                required
               />
             </CardBody>
-            <CardFooter>
+          </Card>
+
+          {/* SECTION 3: OPERATING HOURS */}
+          <Card>
+            <CardHeader>
+              <CardTitle>3. Operating Hours</CardTitle>
+              <CardDescription>Daily store opening and closing schedules</CardDescription>
+            </CardHeader>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="profile-form-grid">
+                <Input
+                  label="Opening Time"
+                  placeholder="e.g. 09:00 AM"
+                  value={openingTime}
+                  onChange={(e) => setOpeningTime(e.target.value)}
+                  icon={Clock}
+                  disabled={submittingSettings}
+                />
+                <Input
+                  label="Closing Time"
+                  placeholder="e.g. 10:00 PM"
+                  value={closingTime}
+                  onChange={(e) => setClosingTime(e.target.value)}
+                  icon={Clock}
+                  disabled={submittingSettings}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* SECTION 4: RECEIPT / BILL SETTINGS */}
+          <Card>
+            <CardHeader>
+              <CardTitle>4. Receipt & Bill Settings</CardTitle>
+              <CardDescription>Custom footer messages printed on customer bill receipts</CardDescription>
+            </CardHeader>
+            <CardBody>
+              <Input
+                label="Receipt Footer Message"
+                placeholder="e.g. Thank you for dining with Saleiz! Please visit again."
+                value={receiptFooter}
+                onChange={(e) => setReceiptFooter(e.target.value)}
+                disabled={submittingSettings}
+              />
+            </CardBody>
+            <CardFooter style={{ justifyContent: 'flex-end' }}>
               <Button type="submit" variant="primary" isLoading={submittingSettings}>
-                Save Settings
+                Save All Restaurant Settings
               </Button>
             </CardFooter>
           </Card>
+
         </form>
       )}
 

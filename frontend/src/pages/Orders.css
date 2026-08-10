@@ -318,3 +318,465 @@
     gap: var(--spacing-sm);
   }
 }
+
+/* Order Command Center Details Modal Styles */
+
+.order-command-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 15, 15, 0.48);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 24px;
+  box-sizing: border-box;
+  animation: productOverlayFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.order-command-overlay.closing {
+  animation: productOverlayFadeOut 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.order-command-container {
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e8e8e8);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.18), 0 10px 24px -10px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  animation: productModalPopIn 0.34s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.order-command-container.closing {
+  animation: productModalPopOut 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.order-command-header {
+  padding: 24px 32px 18px 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border, #e8e8e8);
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+.order-command-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-command-id {
+  font-family: var(--font-body), sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #1f1f1f);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.order-command-meta {
+  font-size: 0.84rem;
+  color: var(--color-text-secondary, #666666);
+  margin-top: 4px;
+}
+
+.order-command-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #666666);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.order-command-close-btn:hover {
+  background-color: var(--color-primary-light, #FDF2F2);
+  color: var(--color-primary, #B71C1C);
+  transform: scale(1.08) rotate(90deg);
+}
+
+/* Scrollable Command Body */
+.order-command-body {
+  padding: 24px 32px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+
+.order-command-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.order-command-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+/* Status Progress Flow Tracker */
+.order-progress-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #FAF9F9;
+  border: 1px solid var(--color-border, #e8e8e8);
+  border-radius: 16px;
+  position: relative;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.step-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 2px solid var(--color-border, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #888888);
+  transition: all 0.2s ease;
+}
+
+.progress-step.completed .step-node {
+  background-color: var(--color-success, #2E7D32);
+  border-color: var(--color-success, #2E7D32);
+  color: #ffffff;
+}
+
+@keyframes statusPulse {
+  0% { box-shadow: 0 0 0 0 rgba(183, 28, 28, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(183, 28, 28, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(183, 28, 28, 0); }
+}
+
+.progress-step.active .step-node {
+  background-color: var(--color-primary, #B71C1C);
+  border-color: var(--color-primary, #B71C1C);
+  color: #ffffff;
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.step-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-title {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+.progress-step.muted .step-title {
+  color: var(--color-text-secondary, #888888);
+  font-weight: 500;
+}
+
+.step-time {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary, #777777);
+}
+
+.progress-connector {
+  flex: 1;
+  height: 2px;
+  background-color: var(--color-border, #e0e0e0);
+  margin: 0 12px;
+}
+
+.progress-connector.completed {
+  background-color: var(--color-success, #2E7D32);
+}
+
+/* Two-column Main Grid */
+.order-command-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 22px;
+}
+
+@media (max-width: 768px) {
+  .order-command-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.command-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #1f1f1f);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Order Items Cards List */
+.command-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.command-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e8e8e8);
+  transition: all 0.2s ease;
+}
+
+.command-item-card:hover {
+  border-color: var(--color-primary-light, #FDF2F2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.command-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.command-item-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #FAF9F9;
+  border: 1px solid var(--color-border, #e8e8e8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.command-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.command-item-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+.command-item-qty {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #666666);
+}
+
+.command-item-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+/* Summary Box */
+.command-summary-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background-color: #FAF9F9;
+  border: 1px solid var(--color-border, #e8e8e8);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.command-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #666666);
+}
+
+.command-summary-row.total {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-primary, #B71C1C);
+  border-top: 1px dashed var(--color-border, #e0e0e0);
+  padding-top: 8px;
+  margin-top: 2px;
+}
+
+/* Customer & Service Info Card */
+.command-info-card {
+  padding: 16px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e8e8e8);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.command-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.command-info-icon {
+  color: var(--color-primary, #B71C1C);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.command-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.command-info-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-secondary, #888888);
+  letter-spacing: 0.04em;
+}
+
+.command-info-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+.service-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background-color: var(--color-primary-light, #FDF2F2);
+  color: var(--color-primary, #B71C1C);
+  font-size: 0.82rem;
+  font-weight: 800;
+  border: 1px solid rgba(183, 28, 28, 0.15);
+  margin-top: 2px;
+}
+
+/* Timing Panel */
+.command-timing-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background-color: #FAF9F9;
+  border: 1px solid var(--color-border, #e8e8e8);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.timing-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.timing-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #888888);
+  text-transform: uppercase;
+}
+
+.timing-val {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+/* Footer Action Buttons */
+.order-command-footer {
+  padding: 18px 32px;
+  border-top: 1px solid var(--color-border, #e8e8e8);
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.order-time-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.order-time-icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.order-time-secondary {
+  font-size: 0.73rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Long-wait Urgency Pill Badges */
+.order-time-cell.urgency-attention .order-time-primary {
+  color: #D97706;
+}
+
+.order-time-cell.urgency-attention .order-time-badge {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.order-time-cell.urgency-delayed .order-time-primary {
+  color: var(--color-primary, #B71C1C);
+}
+
+.order-time-cell.urgency-delayed .order-time-badge {
+  background-color: var(--color-primary-light, #FDF2F2);
+  color: var(--color-primary, #B71C1C);
+  border: 1px solid rgba(183, 28, 28, 0.25);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+}

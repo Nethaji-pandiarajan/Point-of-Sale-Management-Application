@@ -4,16 +4,33 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import Spinner from '../components/ui/Spinner';
 import useToast from '../hooks/useToast';
 import useConfirm from '../hooks/useConfirm';
 import { getOrders, getOrder, updateOrderStatus } from '../services/orders';
-import { Search, Eye, RefreshCw, Calendar, ChevronLeft, ChevronRight, XCircle, CheckCircle2, Play } from 'lucide-react';
-import { formatCurrency, formatDate } from '../utils/helpers';
+import { generateBill, getBillByOrderId, processPayment } from '../services/bills';
+import { Search, Eye, RefreshCw, Calendar, ChevronLeft, ChevronRight, XCircle, CheckCircle2, Play, Clock, X, User, Mail, Phone, Utensils, Check, ShoppingBag, Receipt } from 'lucide-react';
+import { formatCurrency, formatDate, formatTime, getOrderTimeMetrics, getProductImageUrl } from '../utils/helpers';
 import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
+import BillReceiptModal from '../components/BillReceiptModal/BillReceiptModal';
 import './Orders.css';
+
+const OrderTimeCell = ({ order, currentTime }) => {
+  const { primaryText, secondaryText, urgency } = getOrderTimeMetrics(order, currentTime);
+
+  return (
+    <div className={`order-time-cell urgency-${urgency}`}>
+      <div className="order-time-primary">
+        <Clock size={13} className="order-time-icon" />
+        <span>{primaryText}</span>
+        {urgency === 'attention' && <span className="order-time-badge">Attention</span>}
+        {urgency === 'delayed' && <span className="order-time-badge">Delayed</span>}
+      </div>
+      <span className="order-time-secondary">{secondaryText}</span>
+    </div>
+  );
+};
 
 const Orders = () => {
   const { addToast } = useToast();
@@ -22,6 +39,21 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState(null);
+
+  // Bill Modal states
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
+  const [currentBill, setCurrentBill] = useState(null);
+  const [loadingBill, setLoadingBill] = useState(false);
+
+  // Live timer tick state (updates every 60s)
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -32,14 +64,38 @@ const Orders = () => {
   // Filters state
   const [filterSearch, setFilterSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterTableNo, setFilterTableNo] = useState('');
+  const [filterWaiterName, setFilterWaiterName] = useState('');
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
 
   // Selected Order details modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsClosing, setIsDetailsClosing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [statusSubmitting, setStatusSubmitting] = useState(false);
+
+  // Close Order Details Modal with Reverse Animation
+  const handleCloseDetailsModal = useCallback(() => {
+    setIsDetailsClosing(true);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setIsDetailsClosing(false);
+    }, 240);
+  }, []);
+
+  // Keyboard Escape Key Handler for Details Modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen && !statusSubmitting) {
+        handleCloseDetailsModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, statusSubmitting, handleCloseDetailsModal]);
 
   // Fetch orders from API
   const fetchOrders = useCallback(async (pageNum = page) => {
@@ -48,6 +104,9 @@ const Orders = () => {
     try {
       const filters = {
         status: filterStatus,
+        tableNo: filterTableNo,
+        waiterName: filterWaiterName,
+        paymentStatus: filterPaymentStatus,
         search: filterSearch,
         startDate: filterStartDate,
         endDate: filterEndDate
@@ -66,13 +125,13 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterSearch, filterStartDate, filterEndDate, addToast]);
+  }, [filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate, addToast]);
 
   // Fetch on mount or filter changes
   useEffect(() => {
     setPage(1);
     fetchOrders(1);
-  }, [filterStatus, filterSearch, filterStartDate, filterEndDate]);
+  }, [filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate]);
 
   // Handle Page navigation
   const handlePageChange = (pageNum) => {
@@ -82,6 +141,7 @@ const Orders = () => {
 
   // Open Details Modal
   const handleOpenDetails = async (orderId) => {
+    setIsDetailsClosing(false);
     setIsModalOpen(true);
     setLoadingDetails(true);
     try {
@@ -102,7 +162,7 @@ const Orders = () => {
     if (newStatus === 'cancelled') {
       const confirmed = await confirm({
         title: 'Cancel Order?',
-        message: `Are you sure you want to cancel Order ${selectedOrder.id}? This will notify the kitchen and customer.`,
+        message: `Are you sure you want to cancel Order #${selectedOrder.orderNo || selectedOrder.id}? This will notify the kitchen and server.`,
         confirmLabel: 'Cancel Order',
         cancelLabel: 'Keep Active',
         variant: 'danger'
@@ -114,12 +174,11 @@ const Orders = () => {
     try {
       const updated = await updateOrderStatus(selectedOrder.id, newStatus);
       setSelectedOrder(updated);
-      addToast(`Order ${selectedOrder.id} status updated to ${newStatus}`, 'success');
+      addToast(`Order #${selectedOrder.orderNo || selectedOrder.id} status updated to ${newStatus.toUpperCase()}`, 'success');
       
       // Update in local orders array to prevent screen flash
       setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, status: newStatus } : o));
       
-      // Optionally reload from DB to ensure sync
       fetchOrders(page);
     } catch (err) {
       addToast(err.message || 'Failed to update order status', 'error');
@@ -128,29 +187,62 @@ const Orders = () => {
     }
   };
 
+  const handleOpenBill = async (orderId) => {
+    setIsBillModalOpen(true);
+    setLoadingBill(true);
+    try {
+      const billData = await generateBill(orderId);
+      setCurrentBill(billData);
+    } catch (err) {
+      addToast(err.message || 'Failed to generate bill for order', 'error');
+      setIsBillModalOpen(false);
+    } finally {
+      setLoadingBill(false);
+    }
+  };
+
+  const handlePaymentComplete = async (billId, paymentMethod) => {
+    try {
+      const result = await processPayment(billId, { paymentMethod });
+      addToast(`Payment of $${result.grandTotal?.toFixed(2)} completed successfully!`, 'success');
+      
+      setCurrentBill(prev => ({ ...prev, paymentStatus: 'paid', paymentMethod }));
+      
+      fetchOrders(page);
+      
+      if (selectedOrder) {
+        setSelectedOrder(prev => ({ ...prev, status: 'completed', paymentStatus: 'paid' }));
+      }
+    } catch (err) {
+      addToast(err.message || 'Failed to complete payment', 'error');
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'pending': return <Badge variant="warning">Pending</Badge>;
+      case 'pending': return <Badge variant="warning">New Order</Badge>;
       case 'preparing': return <Badge variant="info">Preparing</Badge>;
+      case 'ready': return <Badge variant="success">Ready</Badge>;
+      case 'served': return <Badge variant="success">Served</Badge>;
       case 'completed': return <Badge variant="success">Completed</Badge>;
       case 'cancelled': return <Badge variant="error">Cancelled</Badge>;
       default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
+  const getPaymentStatusBadge = (pStatus) => {
+    switch (pStatus) {
+      case 'paid': return <Badge variant="success">Paid</Badge>;
+      case 'unpaid':
+      default: return <Badge variant="secondary">Unpaid</Badge>;
+    }
+  };
+
   const getItemsSummary = (items) => {
     if (!items || items.length === 0) return 'No items';
     const summary = items.map(i => `${i.quantity}x ${i.name}`).join(', ');
-    return summary.length > 50 ? `${summary.slice(0, 50)}...` : summary;
+    return summary.length > 45 ? `${summary.slice(0, 45)}...` : summary;
   };
-
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'preparing', label: 'Preparing' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'cancelled', label: 'Cancelled' }
-  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -158,9 +250,9 @@ const Orders = () => {
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Order Management</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Dine-In Order Management</h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
-            Monitor, track, and update restaurant guest dining transactions
+            Monitor, track, and update live restaurant table orders throughout the service lifecycle
           </p>
         </div>
       </div>
@@ -180,8 +272,8 @@ const Orders = () => {
           tableKey="orders"
           data={orders}
           loading={loading}
-          searchFields={['id', 'orderNo', 'customerName', 'email', 'phone']}
-          searchPlaceholder="Search order ID or customer name... (Ctrl+F)"
+          searchFields={['id', 'orderNo', 'customerName', 'tableNo', 'notes']}
+          searchPlaceholder="Search order ID, waiter, table, or items... (Ctrl+F)"
           onRefresh={() => fetchOrders(page)}
           emptyStateTitle="No Orders Found"
           emptyStateDescription="We couldn't find any transaction matching your query filters."
@@ -196,6 +288,9 @@ const Orders = () => {
           }}
           onServerFilterChange={(newFilters) => {
             setFilterStatus(newFilters.status || '');
+            setFilterTableNo(newFilters.tableNo || '');
+            setFilterWaiterName(newFilters.waiterName || '');
+            setFilterPaymentStatus(newFilters.paymentStatus || '');
             setFilterStartDate(newFilters.ordStartDate || '');
             setFilterEndDate(newFilters.ordEndDate || '');
             setPage(1);
@@ -206,11 +301,34 @@ const Orders = () => {
               label: 'Order Status',
               type: 'select',
               options: [
-                { value: 'pending', label: 'Pending' },
+                { value: 'pending', label: 'New Order' },
                 { value: 'preparing', label: 'Preparing' },
+                { value: 'ready', label: 'Ready' },
+                { value: 'served', label: 'Served' },
                 { value: 'completed', label: 'Completed' },
                 { value: 'cancelled', label: 'Cancelled' }
               ]
+            },
+            {
+              key: 'paymentStatus',
+              label: 'Payment Status',
+              type: 'select',
+              options: [
+                { value: 'unpaid', label: 'Unpaid' },
+                { value: 'paid', label: 'Paid' }
+              ]
+            },
+            {
+              key: 'tableNo',
+              label: 'Table Number',
+              type: 'text',
+              placeholder: 'e.g. Table 4'
+            },
+            {
+              key: 'waiterName',
+              label: 'Waiter / Server',
+              type: 'text',
+              placeholder: 'e.g. Marco'
             },
             {
               key: 'dateRange',
@@ -225,15 +343,25 @@ const Orders = () => {
               key: 'id',
               title: 'Order ID',
               sortable: true,
-              render: (ord) => <span style={{ fontWeight: '600' }}>#{ord.orderNo || ord.id}</span>
+              render: (ord) => <span style={{ fontWeight: '700' }}>#{ord.orderNo || ord.id}</span>
+            },
+            {
+              key: 'tableNo',
+              title: 'Table Number',
+              sortable: true,
+              render: (ord) => (
+                <span style={{ fontWeight: '700', color: 'var(--color-primary)' }}>
+                  🍽️ {ord.tableNo || 'Takeaway'}
+                </span>
+              )
             },
             {
               key: 'customerName',
-              title: 'Customer',
+              title: 'Waiter / Server',
               sortable: true,
               render: (ord) => (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontWeight: '500' }}>{ord.customerName}</span>
+                  <span style={{ fontWeight: '600' }}>{ord.customerName}</span>
                   {ord.phone && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
                       {ord.phone}
@@ -256,42 +384,48 @@ const Orders = () => {
               key: 'totalAmount',
               title: 'Total Amount',
               sortable: true,
-              render: (ord) => <span style={{ fontWeight: '600' }}>{formatCurrency(ord.totalAmount)}</span>
+              render: (ord) => <span style={{ fontWeight: '700' }}>{formatCurrency(ord.totalAmount)}</span>
             },
             {
               key: 'status',
-              title: 'Status',
+              title: 'Order Status',
               sortable: true,
               render: (ord) => getStatusBadge(ord.status)
+            },
+            {
+              key: 'paymentStatus',
+              title: 'Payment',
+              sortable: true,
+              render: (ord) => getPaymentStatusBadge(ord.paymentStatus)
             },
             {
               key: 'createdAt',
               title: 'Order Time',
               sortable: true,
-              render: (ord) => (
-                <span style={{ fontSize: '0.8125rem' }}>
-                  {new Date(ord.createdAt).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}
-                </span>
-              )
+              render: (ord) => <OrderTimeCell order={ord} currentTime={currentTime} />
             },
             {
               key: 'actions',
               title: 'Actions',
-              width: '130px',
+              width: '200px',
               render: (ord) => (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={Receipt}
+                    title="View & Pay Bill"
+                    onClick={() => handleOpenBill(ord.id)}
+                  >
+                    {ord.paymentStatus === 'paid' ? 'Receipt' : 'Bill'}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     icon={Eye}
                     onClick={() => handleOpenDetails(ord.id)}
                   >
-                    View Details
+                    Details
                   </Button>
                 </div>
               )
@@ -300,81 +434,298 @@ const Orders = () => {
         />
       )}
 
-      {/* Order Details Modal Shell */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedOrder ? `Order Details: ${selectedOrder.id}` : 'Order Details'}
-        size="lg"
-        footer={
-          <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-            Close
-          </Button>
-        }
-      >
-        {loadingDetails ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
-            <Spinner size="md" />
-          </div>
-        ) : selectedOrder ? (
-          <div className="order-details-grid">
-            {/* Left Column: Items details */}
-            <div>
-              <h3 className="details-section-title">Order Items</h3>
-              <Table style={{ minWidth: 'auto', marginBottom: '20px' }}>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead style={{ textAlign: 'center' }}>Qty</TableHead>
-                    <TableHead style={{ textAlign: 'right' }}>Price</TableHead>
-                    <TableHead style={{ textAlign: 'right' }}>Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedOrder.items.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell style={{ fontWeight: '500' }}>{item.name}</TableCell>
-                      <TableCell style={{ textAlign: 'center' }}>{item.quantity}</TableCell>
-                      <TableCell style={{ textAlign: 'right' }}>{formatCurrency(item.price)}</TableCell>
-                      <TableCell style={{ textAlign: 'right', fontWeight: '600' }}>
-                        {formatCurrency(item.quantity * item.price)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow style={{ backgroundColor: 'rgba(251,247,242,0.4)', fontWeight: '700' }}>
-                    <TableCell colSpan={3}>Order Total</TableCell>
-                    <TableCell style={{ textAlign: 'right', fontSize: '1.05rem', color: 'var(--color-primary)' }}>
-                      {formatCurrency(selectedOrder.totalAmount)}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+      {/* Order Command Center Details Modal */}
+      {isModalOpen && (
+        <div className={`order-command-overlay ${isDetailsClosing ? 'closing' : ''}`} onClick={handleCloseDetailsModal}>
+          <div className={`order-command-container ${isDetailsClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="order-command-header">
+              <div>
+                <div className="order-command-title-row">
+                  <h3 className="order-command-id">
+                    ORDER #{selectedOrder?.orderNo || selectedOrder?.id}
+                  </h3>
+                  {selectedOrder && getStatusBadge(selectedOrder.status)}
+                  {selectedOrder && getPaymentStatusBadge(selectedOrder.paymentStatus)}
+                </div>
+                {selectedOrder && (
+                  <p className="order-command-meta">
+                    Placed • {formatDate(selectedOrder.createdAt)}, {formatTime(selectedOrder.createdAt)} • {getOrderTimeMetrics(selectedOrder, currentTime).primaryText}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                className="order-command-close-btn"
+                onClick={handleCloseDetailsModal}
+                aria-label="Close modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-              {/* Status stepper control panel */}
-              {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                <div className="order-status-controller">
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px' }}>Update Fulfilment State</h4>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {selectedOrder.status === 'pending' && (
-                      <Button
-                        variant="primary"
-                        icon={Play}
-                        onClick={() => handleUpdateStatus('preparing')}
-                        isLoading={statusSubmitting}
-                      >
-                        Start Preparing
-                      </Button>
+            {/* Body */}
+            {loadingDetails ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <Spinner size="md" />
+              </div>
+            ) : selectedOrder ? (
+              <div className="order-command-body">
+                
+                {/* 1. ORDER STATUS PROGRESS TRACKER */}
+                <div className="order-progress-tracker">
+                  {(() => {
+                    const status = selectedOrder.status;
+                    const isCancelled = status === 'cancelled';
+
+                    if (isCancelled) {
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-error)' }}>
+                          <XCircle size={20} />
+                          <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>This order was cancelled</span>
+                        </div>
+                      );
+                    }
+
+                    const steps = [
+                      { id: 'pending', label: 'Order Placed' },
+                      { id: 'preparing', label: 'Preparing' },
+                      { id: 'ready', label: 'Ready' },
+                      { id: 'served', label: 'Served' },
+                      { id: 'completed', label: 'Completed' }
+                    ];
+
+                    const stepIndex = status === 'pending' ? 0 
+                      : status === 'preparing' ? 1 
+                      : status === 'ready' ? 2 
+                      : status === 'served' ? 3 
+                      : status === 'completed' ? 4 : 0;
+
+                    return steps.map((step, idx) => {
+                      const isDone = idx < stepIndex || status === 'completed';
+                      const isActive = idx === stepIndex && status !== 'completed';
+
+                      return (
+                        <React.Fragment key={step.id}>
+                          <div className={`progress-step ${isDone ? 'completed' : isActive ? 'active' : 'muted'}`}>
+                            <div className="step-node">
+                              {isDone ? <Check size={14} strokeWidth={3} /> : idx + 1}
+                            </div>
+                            <div className="step-info">
+                              <span className="step-title">{step.label}</span>
+                            </div>
+                          </div>
+                          {idx < steps.length - 1 && (
+                            <div className={`progress-connector ${isDone ? 'completed' : ''}`} />
+                          )}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* 2. MAIN TWO-COLUMN GRID */}
+                <div className="order-command-grid">
+                  
+                  {/* LEFT COLUMN: ITEMS & SUMMARY */}
+                  <div>
+                    <h4 className="command-section-title">
+                      <ShoppingBag size={16} style={{ color: 'var(--color-primary)' }} />
+                      Order Items ({selectedOrder.items?.length || 0})
+                    </h4>
+
+                    <div className="command-items-list">
+                      {selectedOrder.items?.map((item, idx) => (
+                        <div key={idx} className="command-item-card">
+                          <div className="command-item-left">
+                            <div className="command-item-icon-box">
+                              {item.image && (item.image.startsWith('/') || item.image.startsWith('http') || item.image.startsWith('blob:')) ? (
+                                <img 
+                                  src={getProductImageUrl(item.image)} 
+                                  alt={item.name} 
+                                  style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'cover' }} 
+                                />
+                              ) : (
+                                item.image || '🍕'
+                              )}
+                            </div>
+                            <div className="command-item-details">
+                              <span className="command-item-name">{item.name}</span>
+                              <span className="command-item-qty">
+                                Qty {item.quantity} × {formatCurrency(item.price)}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="command-item-price">
+                            {formatCurrency(item.quantity * item.price)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Summary Box */}
+                    <div className="command-summary-box">
+                      <div className="command-summary-row">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(selectedOrder.subtotal || selectedOrder.totalAmount)}</span>
+                      </div>
+                      <div className="command-summary-row total">
+                        <span>ORDER TOTAL</span>
+                        <span>{formatCurrency(selectedOrder.totalAmount)}</span>
+                      </div>
+                    </div>
+
+                    {selectedOrder.notes && (
+                      <div className="kds-notes-box" style={{ margin: '14px 0 0 0', fontSize: '0.85rem' }}>
+                        <span><strong>Special Note:</strong> {selectedOrder.notes}</span>
+                      </div>
                     )}
-                    {selectedOrder.status === 'preparing' && (
-                      <Button
-                        variant="primary"
-                        icon={CheckCircle2}
-                        onClick={() => handleUpdateStatus('completed')}
-                        isLoading={statusSubmitting}
-                      >
-                        Mark Completed
-                      </Button>
-                    )}
+                  </div>
+
+                  {/* RIGHT COLUMN: WAITER & TABLE INFO */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <h4 className="command-section-title">
+                        <User size={16} style={{ color: 'var(--color-primary)' }} />
+                        Waiter & Dining Details
+                      </h4>
+
+                      <div className="command-info-card">
+                        <div className="command-info-item">
+                          <User size={16} className="command-info-icon" />
+                          <div className="command-info-text">
+                            <span className="command-info-label">Waiter / Server Name</span>
+                            <span className="command-info-val">{selectedOrder.customerName}</span>
+                          </div>
+                        </div>
+
+                        <div className="command-info-item">
+                          <Mail size={16} className="command-info-icon" />
+                          <div className="command-info-text">
+                            <span className="command-info-label">Contact Email</span>
+                            <span className="command-info-val">{selectedOrder.email || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="command-info-item">
+                          <Phone size={16} className="command-info-icon" />
+                          <div className="command-info-text">
+                            <span className="command-info-label">Phone Contact</span>
+                            <span className="command-info-val">{selectedOrder.phone || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="command-info-item">
+                          <Utensils size={16} className="command-info-icon" />
+                          <div className="command-info-text">
+                            <span className="command-info-label">Service Table</span>
+                            <span className="service-pill-badge">
+                              🍽️ {selectedOrder.tableNo || 'Table 1'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 3. ORDER TIMING & TIMELINE SECTION */}
+                <div className="command-timing-card">
+                  <div className="timing-block">
+                    <span className="timing-label">Order Placed</span>
+                    <span className="timing-val">{formatTime(selectedOrder.createdAt)}</span>
+                  </div>
+                  <div className="timing-block">
+                    <span className="timing-label">Current Status</span>
+                    <span className="timing-val" style={{ textTransform: 'capitalize' }}>{selectedOrder.status}</span>
+                  </div>
+                  <div className="timing-block">
+                    <span className="timing-label">Payment Status</span>
+                    <span className="timing-val" style={{ textTransform: 'capitalize' }}>{selectedOrder.paymentStatus || 'Unpaid'}</span>
+                  </div>
+                  <div className="timing-block">
+                    <span className="timing-label">Time Elapsed</span>
+                    <span className="timing-val">{getOrderTimeMetrics(selectedOrder, currentTime).primaryText}</span>
+                  </div>
+                </div>
+
+                {/* 4. AUDIT STATUS TIMELINE & PERFORMER LOG */}
+                {selectedOrder.timeline && selectedOrder.timeline.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <h4 className="command-section-title">
+                      <Clock size={16} style={{ color: 'var(--color-primary)' }} />
+                      Status Audit History & Performer Log
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#F8FAFC', padding: '12px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      {selectedOrder.timeline.map((entry, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.825rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontWeight: '700', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--color-primary)', background: '#FFF0F0', padding: '2px 6px', borderRadius: '4px' }}>
+                              {entry.status}
+                            </span>
+                            <span style={{ color: 'var(--color-text-primary)' }}>
+                              {entry.note || `Status updated to ${entry.status}`}
+                            </span>
+                          </div>
+                          <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>
+                            {entry.by && <strong style={{ color: 'var(--color-text-primary)', marginRight: '6px' }}>{entry.by}</strong>}
+                            <span>{formatTime(entry.time)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            ) : null}
+
+            {/* Footer */}
+            <div className="order-command-footer">
+              {selectedOrder && selectedOrder.status !== 'cancelled' ? (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {selectedOrder.status === 'pending' && (
+                    <Button
+                      variant="primary"
+                      icon={Play}
+                      onClick={() => handleUpdateStatus('preparing')}
+                      isLoading={statusSubmitting}
+                    >
+                      Start Preparing
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'preparing' && (
+                    <Button
+                      variant="primary"
+                      icon={CheckCircle2}
+                      onClick={() => handleUpdateStatus('ready')}
+                      isLoading={statusSubmitting}
+                    >
+                      Mark Ready
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'ready' && (
+                    <Button
+                      variant="primary"
+                      icon={CheckCircle2}
+                      onClick={() => handleUpdateStatus('served')}
+                      isLoading={statusSubmitting}
+                    >
+                      Mark Served
+                    </Button>
+                  )}
+                  {(selectedOrder.status === 'served' || selectedOrder.status === 'completed') && (
+                    <Button
+                      variant="primary"
+                      icon={Receipt}
+                      onClick={() => handleOpenBill(selectedOrder.id)}
+                    >
+                      {selectedOrder.paymentStatus === 'paid' ? 'View Bill Receipt' : 'Generate & Pay Bill'}
+                    </Button>
+                  )}
+                  {selectedOrder.status !== 'completed' && (
                     <Button
                       variant="danger"
                       icon={XCircle}
@@ -383,63 +734,30 @@ const Orders = () => {
                     >
                       Cancel Order
                     </Button>
-                  </div>
+                  )}
                 </div>
+              ) : (
+                <div />
               )}
+
+              <Button variant="ghost" onClick={handleCloseDetailsModal}>
+                Close
+              </Button>
             </div>
 
-            {/* Right Column: Customer details & Timelines */}
-            <div>
-              <h3 className="details-section-title">Delivery & Guest Info</h3>
-              <div className="customer-info-box" style={{ marginBottom: '24px' }}>
-                <div className="customer-info-row">
-                  <span className="customer-info-label">Customer Name</span>
-                  <span className="customer-info-value">{selectedOrder.customerName}</span>
-                </div>
-                <div className="customer-info-row">
-                  <span className="customer-info-label">Email Address</span>
-                  <span className="customer-info-value">{selectedOrder.email}</span>
-                </div>
-                <div className="customer-info-row">
-                  <span className="customer-info-label">Phone Contact</span>
-                  <span className="customer-info-value">{selectedOrder.phone}</span>
-                </div>
-                <div className="customer-info-row">
-                  <span className="customer-info-label">Service Type / Table</span>
-                  <span className="customer-info-value" style={{ color: 'var(--color-primary)', fontWeight: '600' }}>
-                    {selectedOrder.tableNo}
-                  </span>
-                </div>
-              </div>
-
-              <h3 className="details-section-title">Fulfilment Timeline</h3>
-              <div className="timeline-container">
-                {selectedOrder.timeline.map((evt, idx) => (
-                  <div
-                    key={idx}
-                    className={`timeline-event ${idx === selectedOrder.timeline.length - 1 ? 'active' : ''} ${selectedOrder.status === 'completed' ? 'completed' : ''} ${selectedOrder.status === 'cancelled' ? 'cancelled' : ''}`}
-                  >
-                    <div className="timeline-dot"></div>
-                    <div className="timeline-event-title">
-                      {evt.status.charAt(0).toUpperCase() + evt.status.slice(1)}
-                    </div>
-                    <div className="timeline-event-time">
-                      {new Date(evt.time).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      })}
-                    </div>
-                    <div className="timeline-event-note">{evt.note}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        ) : null}
-      </Modal>
+        </div>
+      )}
+
+      {/* Bill & Receipt Modal */}
+      {isBillModalOpen && (
+        <BillReceiptModal
+          bill={currentBill}
+          loading={loadingBill}
+          onClose={() => setIsBillModalOpen(false)}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
 
     </div>
   );

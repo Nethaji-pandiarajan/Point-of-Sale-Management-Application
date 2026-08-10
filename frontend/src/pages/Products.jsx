@@ -5,13 +5,13 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
+import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import useToast from '../hooks/useToast';
 import useConfirm from '../hooks/useConfirm';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/products';
 import { getCategories } from '../services/categories';
-import { Plus, Edit, Trash2, Search, RefreshCw, FilterX } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, RefreshCw, FilterX, X, Camera } from 'lucide-react';
 import { formatCurrency, getProductImageUrl } from '../utils/helpers';
 import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +34,7 @@ const Products = () => {
 
   // Modal & Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null); // null = Add, object = Edit
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -89,6 +90,27 @@ const Products = () => {
     fetchProductsList();
   }, [fetchProductsList]);
 
+  // Handle Modal Close with Smooth Reverse Animation
+  const handleCloseModal = useCallback(() => {
+    if (submitting) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setIsClosing(false);
+    }, 240);
+  }, [submitting]);
+
+  // Keyboard Escape Key Handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen && !submitting) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, submitting, handleCloseModal]);
+
   // Open Modal Helpers
   const handleOpenAddModal = () => {
     if (categories.length === 0) {
@@ -105,6 +127,7 @@ const Products = () => {
     setImageFile(null);
     setImagePreview('');
     setFormErrors({});
+    setIsClosing(false);
     setIsModalOpen(true);
   };
 
@@ -119,6 +142,7 @@ const Products = () => {
     setImageFile(null);
     setImagePreview(prod.image || '');
     setFormErrors({});
+    setIsClosing(false);
     setIsModalOpen(true);
   };
 
@@ -235,7 +259,7 @@ const Products = () => {
         await createProduct(payload);
         addToast(`Dish "${payload.name}" created successfully`, 'success');
       }
-      setIsModalOpen(false);
+      handleCloseModal();
       fetchProductsList(); // reload products
     } catch (err) {
       addToast(err.message || 'Failed to save product information', 'error');
@@ -466,182 +490,230 @@ const Products = () => {
         />
       )}
 
-      {/* Add / Edit Product Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedProduct ? 'Edit Menu Product' : 'Add Menu Product'}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleFormSubmit} isLoading={submitting}>
-              {selectedProduct ? 'Save Changes' : 'Create Product'}
-            </Button>
-          </>
-        }
-      >
-        <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          
-          {/* Product Image drag & drop card block */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Product Image *</label>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="image/png, image/jpeg, image/jpg, image/webp" 
-              style={{ display: 'none' }} 
-            />
+      {/* Add / Edit Menu Product Modal Container */}
+      {isModalOpen && (
+        <div className={`product-modal-overlay ${isClosing ? 'closing' : ''}`} onClick={handleCloseModal}>
+          <div className={`product-modal-container ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             
-            {imagePreview ? (
-              <div className="product-image-preview-card" style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '16px',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-surface)',
-                minHeight: '140px',
-                justifyContent: 'center'
-              }}>
-                <img 
-                  src={imagePreview.startsWith('blob:') ? imagePreview : getProductImageUrl(imagePreview)} 
-                  alt="Preview" 
-                  style={{ 
-                    maxHeight: '120px', 
-                    maxWidth: '100%', 
-                    objectFit: 'contain', 
-                    borderRadius: 'var(--radius-sm)' 
-                  }} 
-                />
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <Button type="button" size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                    Replace Image
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={handleRemoveImage}>
-                    Remove Image
-                  </Button>
-                </div>
+            {/* Header */}
+            <div className="product-modal-header">
+              <div className="product-modal-header-text">
+                <h3 className="product-modal-title">
+                  {selectedProduct ? 'Edit Menu Product' : 'Add New Menu Product'}
+                </h3>
+                <p className="product-modal-subtitle">
+                  Create a new item for your restaurant menu
+                </p>
               </div>
-            ) : (
-              <div 
-                className="product-image-dropzone"
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '24px 16px',
-                  border: formErrors.image ? '2px dashed var(--color-error)' : '2px dashed var(--color-border)',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-surface)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'all var(--transition-fast)',
-                  minHeight: '140px'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                onMouseLeave={(e) => e.currentTarget.style.borderColor = formErrors.image ? 'var(--color-error)' : 'var(--color-border)'}
+              <button
+                type="button"
+                className="product-modal-close-btn"
+                onClick={handleCloseModal}
+                aria-label="Close modal"
               >
-                <span style={{ fontSize: '2rem', color: 'var(--color-text-secondary)' }}>📤</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                    Drag & drop or click to upload
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
-                    Supports JPG, JPEG, PNG, WebP (Max 5 MB)
-                  </span>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', margin: 0 }}>
+              <div className="product-modal-body">
+                
+                {/* Product Image Upload Section */}
+                <div className="product-image-section">
+                  <label className="product-field-label">
+                    Product Image <span className="required-star">*</span>
+                  </label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/png, image/jpeg, image/jpg, image/webp" 
+                    style={{ display: 'none' }} 
+                  />
+                  
+                  {imagePreview ? (
+                    <div className="product-image-preview-card">
+                      <img 
+                        src={imagePreview.startsWith('blob:') ? imagePreview : getProductImageUrl(imagePreview)} 
+                        alt="Preview" 
+                        className="product-preview-img"
+                      />
+                      <div className="product-preview-actions">
+                        <Button type="button" size="sm" variant="secondary" onClick={() => fileInputRef.current?.click()}>
+                          Replace Image
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={handleRemoveImage}>
+                          Remove Image
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className={`product-image-dropzone ${formErrors.image ? 'has-error' : ''}`}
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      <div className="upload-icon-circle">
+                        <Camera size={22} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span className="upload-title">Upload product image</span>
+                        <span className="upload-subtitle">Drag & drop or click to browse</span>
+                      </div>
+                      <span className="upload-spec-pill">JPG • PNG • WEBP • Max 5MB</span>
+                    </div>
+                  )}
+                  
+                  {formErrors.image && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.image}</span>
+                  )}
                 </div>
+
+                {/* ROW 1: Product Name & Category */}
+                <div className="product-form-row">
+                  <div className="product-field-group">
+                    <label className="product-field-label">
+                      Product Name <span className="required-star">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`product-input-control ${formErrors.name ? 'has-error' : ''}`}
+                      placeholder="Enter product name"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
+                      }}
+                      disabled={submitting}
+                      required
+                    />
+                    {formErrors.name && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.name}</span>
+                    )}
+                  </div>
+
+                  <div className="product-field-group">
+                    <label className="product-field-label">
+                      Category <span className="required-star">*</span>
+                    </label>
+                    <div className="product-select-wrapper">
+                      <select
+                        className={`product-select-control ${formErrors.categoryId ? 'has-error' : ''}`}
+                        value={categoryId}
+                        onChange={(e) => {
+                          setCategoryId(e.target.value);
+                          if (formErrors.categoryId) setFormErrors(prev => ({ ...prev, categoryId: '' }));
+                        }}
+                        disabled={submitting}
+                        required
+                      >
+                        {modalCategoryOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <span className="product-select-arrow" />
+                    </div>
+                    {formErrors.categoryId && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.categoryId}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* ROW 2: Price & Availability Status */}
+                <div className="product-form-row">
+                  <div className="product-field-group">
+                    <label className="product-field-label">
+                      Price (₹) <span className="required-star">*</span>
+                    </label>
+                    <div className="product-price-wrapper">
+                      <span className="product-currency-symbol">₹</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className={`product-input-control product-price-input ${formErrors.price ? 'has-error' : ''}`}
+                        placeholder="150.00"
+                        value={price}
+                        onChange={(e) => {
+                          setPrice(e.target.value);
+                          if (formErrors.price) setFormErrors(prev => ({ ...prev, price: '' }));
+                        }}
+                        disabled={submitting}
+                        required
+                      />
+                    </div>
+                    {formErrors.price && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.price}</span>
+                    )}
+                  </div>
+
+                  <div className="product-field-group">
+                    <label className="product-field-label">
+                      Availability Status
+                    </label>
+                    <div className="availability-status-group">
+                      <button
+                        type="button"
+                        className={`availability-btn ${availability === 'available' ? 'selected' : ''}`}
+                        onClick={() => setAvailability('available')}
+                        disabled={submitting}
+                      >
+                        <span className="status-dot">🟢</span>
+                        <span>Available</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`availability-btn ${availability === 'out_of_stock' ? 'selected' : ''}`}
+                        onClick={() => setAvailability('out_of_stock')}
+                        disabled={submitting}
+                      >
+                        <span className="status-dot">🔴</span>
+                        <span>Out of Stock</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ROW 3: Description Textarea */}
+                <div className="product-field-group">
+                  <label className="product-field-label">Description</label>
+                  <textarea
+                    className="product-textarea"
+                    placeholder="Describe ingredients, portion size, or other important details..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+
               </div>
-            )}
-            
-            {formErrors.image && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.image}</span>
-            )}
+
+              {/* Modal Footer (Fixed) */}
+              <div className="product-modal-footer">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleCloseModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={submitting}
+                  className="product-submit-btn"
+                >
+                  {selectedProduct ? 'Save Changes' : 'Create Product'}
+                </Button>
+              </div>
+            </form>
           </div>
-
-          <Input
-            label="Product Name"
-            placeholder="e.g. Classic Burger"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
-            }}
-            error={formErrors.name}
-            disabled={submitting}
-            required
-            className="w-full"
-          />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <Select
-              label="Category"
-              options={modalCategoryOptions}
-              value={categoryId}
-              onChange={(e) => {
-                setCategoryId(e.target.value);
-                if (formErrors.categoryId) setFormErrors(prev => ({ ...prev, categoryId: '' }));
-              }}
-              error={formErrors.categoryId}
-              disabled={submitting}
-              required
-            />
-            <Input
-              label="Price (₹)"
-              type="number"
-              step="0.01"
-              placeholder="12.50"
-              value={price}
-              onChange={(e) => {
-                setPrice(e.target.value);
-                if (formErrors.price) setFormErrors(prev => ({ ...prev, price: '' }));
-              }}
-              error={formErrors.price}
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Description</label>
-            <textarea
-              placeholder="List key ingredients or portion sizes"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={submitting}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '0.95rem',
-                padding: '10px 14px',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-sm)',
-                minHeight: '80px',
-                outline: 'none',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <Select
-            label="Availability Status"
-            options={modalAvailabilityOptions}
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            disabled={submitting}
-          />
-        </form>
-      </Modal>
+        </div>
+      )}
 
     </div>
   );

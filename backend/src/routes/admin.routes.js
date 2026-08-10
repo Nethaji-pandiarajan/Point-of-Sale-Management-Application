@@ -9,5 +9,6 @@ router.get('/profile', protect, adminController.getProfile);
 router.patch('/profile', protect, adminController.updateProfile);
 router.patch('/change-password', protect, adminController.changePassword);
 router.post('/profile/upload-photo', protect, handleProfileUpload, profileController.uploadPhoto);
+router.get('/dashboard', protect, adminController.getDashboardStats);
 
 module.exports = router;

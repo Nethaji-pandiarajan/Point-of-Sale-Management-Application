@@ -8,6 +8,10 @@ import {
   ShoppingBag,
   Users,
   Settings,
+  Grid,
+  UserCheck,
+  ChefHat,
+  BarChart3,
   Menu,
   X,
   Palette,
@@ -53,20 +57,28 @@ const AdminLayout = ({ children }) => {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === '/') return 'Dashboard';
+    if (path === '/kitchen') return 'Kitchen Display System (KDS)';
+    if (path === '/tables') return 'Table Management';
     if (path === '/categories') return 'Categories';
     if (path === '/products') return 'Food Products';
     if (path === '/orders') return 'Orders';
+    if (path === '/staff') return 'Staff & Waiter Management';
     if (path === '/customers') return 'Customers';
+    if (path === '/reports') return 'Reports & Analytics';
     if (path === '/profile') return 'Profile & Settings';
     return 'Admin Console';
   };
 
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Kitchen KDS', path: '/kitchen', icon: ChefHat },
+    { name: 'Tables', path: '/tables', icon: Grid },
     { name: 'Categories', path: '/categories', icon: Tags },
     { name: 'Food Products', path: '/products', icon: UtensilsCrossed },
     { name: 'Orders', path: '/orders', icon: ShoppingBag },
+    { name: 'Staff & Waiters', path: '/staff', icon: UserCheck },
     { name: 'Customers', path: '/customers', icon: Users },
+    { name: 'Reports', path: '/reports', icon: BarChart3 },
     { name: 'Profile & Settings', path: '/profile', icon: Settings }
   ];
 

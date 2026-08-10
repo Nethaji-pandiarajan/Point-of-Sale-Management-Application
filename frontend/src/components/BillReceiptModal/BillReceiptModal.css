@@ -1,0 +1,255 @@
+.bill-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  padding: 20px;
+  animation: fadeInOverlay 0.2s ease-out forwards;
+}
+
+.bill-modal-container {
+  background-color: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+}
+
+.bill-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #E2E8F0;
+  background-color: #FAFAFA;
+}
+
+.bill-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.bill-close-btn:hover {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
+
+.bill-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Printable Sheet */
+.printable-receipt-sheet {
+  background: #FFFFFF;
+  border: 1px dashed #CBD5E1;
+  border-radius: 12px;
+  padding: 24px;
+  font-family: inherit;
+}
+
+.receipt-brand-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.receipt-brand-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--color-primary, #E53E3E);
+  margin: 0;
+}
+
+.receipt-brand-sub {
+  font-size: 0.8rem;
+  color: #64748B;
+  margin: 4px 0 0 0;
+}
+
+.receipt-divider-dash {
+  border-bottom: 2px dashed #E2E8F0;
+  margin: 12px 0;
+}
+
+.receipt-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  font-size: 0.825rem;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.receipt-label {
+  color: #64748B;
+  margin-right: 6px;
+}
+
+.receipt-val {
+  color: #0F172A;
+}
+
+.receipt-status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.receipt-status-badge.unpaid {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.receipt-status-badge.paid {
+  background-color: #D1FAE5;
+  color: #059669;
+}
+
+.receipt-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.receipt-items-table th {
+  text-align: left;
+  padding: 8px 4px;
+  border-bottom: 2px solid #E2E8F0;
+  color: #475569;
+  font-weight: 700;
+
+}
+
+.receipt-items-table td {
+  padding: 8px 4px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #1E293B;
+}
+
+.receipt-totals-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 2px dashed #E2E8F0;
+  font-size: 0.875rem;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  color: #475569;
+}
+
+.receipt-total-row.grand-total {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #E2E8F0;
+}
+
+.receipt-footer-text {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px dashed #E2E8F0;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+/* Payment Selector */
+.payment-method-card {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.pay-method-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid #E2E8F0;
+  background-color: #FFFFFF;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pay-method-opt:hover {
+  border-color: #CBD5E1;
+  background-color: #F1F5F9;
+}
+
+.pay-method-opt.selected {
+  border-color: var(--color-primary, #E53E3E);
+  background-color: #FFF5F5;
+  color: var(--color-primary, #E53E3E);
+}
+
+.bill-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #E2E8F0;
+  background-color: #FAFAFA;
+}
+
+/* Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print-area, #receipt-print-area * {
+    visibility: visible;
+  }
+  #receipt-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

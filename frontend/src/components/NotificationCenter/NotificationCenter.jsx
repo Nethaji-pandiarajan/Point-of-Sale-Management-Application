@@ -14,7 +14,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  Filter
+  Filter,
+  ChefHat,
+  Receipt,
+  Grid
 } from 'lucide-react';
 import {
   getNotifications,
@@ -32,9 +35,9 @@ const FILTER_OPTIONS = [
   { id: 'all', label: 'All' },
   { id: 'unread', label: 'Unread' },
   { id: 'order', label: 'Orders' },
-  { id: 'product', label: 'Products' },
-  { id: 'customer', label: 'Customers' },
-  { id: 'category', label: 'Categories' },
+  { id: 'kot', label: 'KOTs' },
+  { id: 'bill', label: 'Bills' },
+  { id: 'table', label: 'Tables' },
   { id: 'system', label: 'System' }
 ];
 
@@ -164,16 +167,20 @@ const NotificationCenter = () => {
       }
     }
 
-    // Optional page navigation
+    // Navigation on click
     setIsOpen(false);
     if (item.referenceType === 'order') {
+      navigate('/orders');
+    } else if (item.referenceType === 'kot') {
+      navigate('/kitchen');
+    } else if (item.referenceType === 'table') {
+      navigate('/tables');
+    } else if (item.referenceType === 'bill') {
       navigate('/orders');
     } else if (item.referenceType === 'product') {
       navigate('/products');
     } else if (item.referenceType === 'customer') {
       navigate('/customers');
-    } else if (item.referenceType === 'category') {
-      navigate('/categories');
     } else if (item.referenceType === 'system') {
       navigate('/profile');
     }
@@ -228,9 +235,11 @@ const NotificationCenter = () => {
   // Get icon component by reference_type or type
   const renderIcon = (type, refType) => {
     if (refType === 'order') return <ShoppingBag size={18} />;
+    if (refType === 'kot') return <ChefHat size={18} />;
+    if (refType === 'bill') return <Receipt size={18} />;
+    if (refType === 'table') return <Grid size={18} />;
     if (refType === 'product') return <Utensils size={18} />;
     if (refType === 'customer') return <Users size={18} />;
-    if (refType === 'category') return <Tags size={18} />;
 
     switch (type) {
       case 'success': return <CheckCircle2 size={18} />;

@@ -1,0 +1,360 @@
+/* Kitchen Display System (KDS) Styling */
+
+.kitchen-kds-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.kitchen-kds-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background-color: #ffffff;
+  padding: 18px 24px;
+  border-radius: 18px;
+  border: 1px solid var(--color-border, #e8e8e8);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.kitchen-kds-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kitchen-kds-title h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #1f1f1f);
+  margin: 0;
+}
+
+.kitchen-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2E7D32;
+  box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.4);
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(46, 125, 50, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+  }
+}
+
+.kitchen-metrics-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.kds-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.kds-count-badge.pending {
+  background-color: #FDF2F2;
+  color: #B71C1C;
+  border: 1px solid #FFCDD2;
+}
+
+.kds-count-badge.preparing {
+  background-color: #FFF8E1;
+  color: #F57F17;
+  border: 1px solid #FFE082;
+}
+
+.kds-count-badge.ready {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+/* 3-Column KDS Layout */
+.kds-board-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  min-height: calc(100vh - 240px);
+}
+
+.kds-column {
+  background-color: #FAF9F9;
+  border-radius: 20px;
+  border: 1px solid var(--color-border, #e8e8e8);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kds-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border, #e8e8e8);
+}
+
+.kds-column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #1f1f1f);
+}
+
+.kds-column-title.pending {
+  color: #B71C1C;
+}
+
+.kds-column-title.preparing {
+  color: #E65100;
+}
+
+.kds-column-title.ready {
+  color: #2E7D32;
+}
+
+.kds-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* KDS Order Ticket Card */
+.kds-ticket-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 2px solid var(--color-border, #e8e8e8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kds-ticket-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.kds-ticket-card.pending {
+  border-color: #FFCDD2;
+}
+
+.kds-ticket-card.preparing {
+  border-color: #FFE082;
+}
+
+.kds-ticket-card.ready {
+  border-color: #A5D6A7;
+}
+
+.kds-ticket-header {
+  padding: 14px 16px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border, #e8e8e8);
+}
+
+.kds-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-primary-light, #FDF2F2);
+  color: var(--color-primary, #B71C1C);
+  font-size: 0.9rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.kds-ticket-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #666666);
+}
+
+.kds-ticket-meta {
+  padding: 10px 16px;
+  background-color: #FAF9F9;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary, #666666);
+  border-bottom: 1px dashed var(--color-border, #e8e8e8);
+}
+
+.kds-ticket-items {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.kds-item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.kds-item-qty {
+  background-color: var(--color-text-primary, #1f1f1f);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 800;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kds-ticket-card.pending .kds-item-qty {
+  background-color: #B71C1C;
+}
+
+.kds-ticket-card.preparing .kds-item-qty {
+  background-color: #E65100;
+}
+
+.kds-ticket-card.ready .kds-item-qty {
+  background-color: #2E7D32;
+}
+
+.kds-item-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f1f1f);
+  line-height: 1.3;
+}
+
+.kds-notes-box {
+  margin: 4px 16px 14px 16px;
+  padding: 10px 12px;
+  background-color: #FFF8E1;
+  border: 1px solid #FFE082;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #F57F17;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.kds-ticket-footer {
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-top: 1px solid var(--color-border, #e8e8e8);
+  display: flex;
+  gap: 8px;
+}
+
+.kds-action-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kds-action-btn.start {
+  background-color: #B71C1C;
+  color: #ffffff;
+}
+
+.kds-action-btn.start:hover {
+  background-color: #9A1414;
+}
+
+.kds-action-btn.ready {
+  background-color: #E65100;
+  color: #ffffff;
+}
+
+.kds-action-btn.ready:hover {
+  background-color: #BF360C;
+}
+
+.kds-action-btn.complete {
+  background-color: #2E7D32;
+  color: #ffffff;
+}
+
+.kds-action-btn.complete:hover {
+  background-color: #1B5E20;
+}
+
+/* Empty column state */
+.kds-empty-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--color-text-secondary, #888888);
+  gap: 8px;
+}
+
+.kds-empty-col span {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Responsive KDS Board */
+@media (max-width: 1024px) {
+  .kds-board-grid {
+    grid-template-columns: 1fr;
+  }
+}

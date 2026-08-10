@@ -3,7 +3,7 @@ const { createNotification } = require('../utils/notification.helper');
 
 const getOrders = async (req, res, next) => {
   try {
-    const { status, search, startDate, endDate, page = 1, limit = 5 } = req.query;
+    const { status, tableNo, waiterName, paymentStatus, search, startDate, endDate, page = 1, limit = 5 } = req.query;
 
     let countQueryText = `
       SELECT COUNT(o.id)::integer
@@ -14,7 +14,7 @@ const getOrders = async (req, res, next) => {
 
     let queryText = `
       SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
-             o.status, o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
+             o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
              u.name AS "customerName", u.email, u.phone,
              COALESCE(
                JSON_AGG(
@@ -38,9 +38,30 @@ const getOrders = async (req, res, next) => {
       index++;
     }
 
+    if (tableNo) {
+      countQueryText += ` AND LOWER(o.table_number) = LOWER($${index})`;
+      queryText += ` AND LOWER(o.table_number) = LOWER($${index})`;
+      params.push(tableNo.trim());
+      index++;
+    }
+
+    if (waiterName) {
+      countQueryText += ` AND u.name ILIKE $${index}`;
+      queryText += ` AND u.name ILIKE $${index}`;
+      params.push(`%${waiterName.trim()}%`);
+      index++;
+    }
+
+    if (paymentStatus) {
+      countQueryText += ` AND o.payment_status = $${index}`;
+      queryText += ` AND o.payment_status = $${index}`;
+      params.push(paymentStatus);
+      index++;
+    }
+
     if (search) {
-      countQueryText += ` AND (o.order_number ILIKE $${index} OR CAST(o.id AS TEXT) ILIKE $${index} OR u.name ILIKE $${index})`;
-      queryText += ` AND (o.order_number ILIKE $${index} OR CAST(o.id AS TEXT) ILIKE $${index} OR u.name ILIKE $${index})`;
+      countQueryText += ` AND (o.order_number ILIKE $${index} OR CAST(o.id AS TEXT) ILIKE $${index} OR o.table_number ILIKE $${index} OR u.name ILIKE $${index} OR o.notes ILIKE $${index})`;
+      queryText += ` AND (o.order_number ILIKE $${index} OR CAST(o.id AS TEXT) ILIKE $${index} OR o.table_number ILIKE $${index} OR u.name ILIKE $${index} OR o.notes ILIKE $${index})`;
       params.push(`%${search.trim()}%`);
       index++;
     }
@@ -87,13 +108,17 @@ const getOrders = async (req, res, next) => {
     const formatted = ordersRes.rows.map(row => ({
       id: row.id,
       orderNo: row.orderNo,
+      orderType: row.orderType,
       customerName: row.customerName || 'Anonymous Customer',
       email: row.email || '',
       phone: row.phone || '',
       tableNo: row.tableNo || '',
+      notes: row.notes || '',
       items: row.items,
+      subtotal: parseFloat(row.subtotal || row.totalAmount),
       totalAmount: parseFloat(row.totalAmount),
       status: row.status,
+      paymentStatus: row.paymentStatus || 'unpaid',
       createdAt: row.createdAt,
       timeline: row.timeline || []
     }));
@@ -123,7 +148,7 @@ const getOrderById = async (req, res, next) => {
 
     const queryText = `
       SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
-             o.status, o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
+             o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
              u.name AS "customerName", u.email, u.phone,
              COALESCE(
                JSON_AGG(
@@ -148,13 +173,17 @@ const getOrderById = async (req, res, next) => {
     const formatted = {
       id: order.id,
       orderNo: order.orderNo,
+      orderType: order.orderType,
       customerName: order.customerName || 'Anonymous Customer',
       email: order.email || '',
       phone: order.phone || '',
       tableNo: order.tableNo || '',
+      notes: order.notes || '',
       items: order.items,
+      subtotal: parseFloat(order.subtotal || order.totalAmount),
       totalAmount: parseFloat(order.totalAmount),
       status: order.status,
+      paymentStatus: order.paymentStatus || 'unpaid',
       createdAt: order.createdAt,
       timeline: order.timeline || []
     };
@@ -244,12 +273,28 @@ const createOrder = async (req, res, next) => {
       { status: 'pending', time: new Date().toISOString(), note: `Order placed by customer ${user.name}` }
     ];
 
-    // 5. Insert order (letting PostgreSQL assign integer ID automatically)
+    // 5. Link table_id and mark table as occupied if tableNo is provided
+    let matchedTableId = null;
+    if (tableNo && tableNo.trim()) {
+      const tableCheck = await client.query(
+        "SELECT id FROM tables WHERE LOWER(table_number) = LOWER($1)",
+        [tableNo.trim()]
+      );
+      if (tableCheck.rowCount > 0) {
+        matchedTableId = tableCheck.rows[0].id;
+        await client.query(
+          "UPDATE tables SET status = 'occupied' WHERE id = $1 AND status != 'reserved'",
+          [matchedTableId]
+        );
+      }
+    }
+
+    // Insert order
     const orderInsertRes = await client.query(`
-      INSERT INTO orders (user_id, order_number, order_type, table_number, status, subtotal, total_amount, notes, timeline)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO orders (user_id, order_number, order_type, table_number, table_id, status, subtotal, total_amount, notes, timeline)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id
-    `, [userId, orderNumber, orderType || 'dine_in', tableNo || '', 'pending', subtotal, totalAmount, notes || '', JSON.stringify(timeline)]);
+    `, [userId, orderNumber, orderType || 'dine_in', tableNo || '', matchedTableId, 'pending', subtotal, totalAmount, notes || '', JSON.stringify(timeline)]);
 
     const orderId = orderInsertRes.rows[0].id;
 
@@ -260,6 +305,27 @@ const createOrder = async (req, res, next) => {
         VALUES ($1, $2, $3, $4, $5, $6)
       `, [orderId, val.productId, val.productName, val.quantity, val.unitPrice, val.totalPrice]);
     }
+
+    // 7. Generate Kitchen Order Ticket (KOT)
+    const kotCountRes = await client.query(
+      "SELECT COUNT(id)::integer FROM kots WHERE created_at >= $1 AND created_at <= $2",
+      [`${year}-01-01 00:00:00`, `${year}-12-31 23:59:59`]
+    );
+    const nextKotNum = (kotCountRes.rows[0].count + 1).toString().padStart(6, '0');
+    const kotNumber = `KOT-${year}-${nextKotNum}`;
+
+    const kotItemsJson = JSON.stringify(
+      validatedItems.map(vi => ({
+        productId: vi.productId,
+        name: vi.productName,
+        quantity: vi.quantity
+      }))
+    );
+
+    await client.query(`
+      INSERT INTO kots (kot_number, order_id, table_number, waiter_id, waiter_name, status, notes, items)
+      VALUES ($1, $2, $3, $4, $5, 'new', $6, $7)
+    `, [kotNumber, orderId, tableNo || '', userId, user.name, notes || '', kotItemsJson]);
 
     await client.query('COMMIT');
 
@@ -280,10 +346,13 @@ const createOrder = async (req, res, next) => {
       data: {
         id: orderId,
         orderNo: orderNumber,
+        orderType: orderType || 'dine_in',
         customerName: user.name,
         email: user.email,
         phone: user.phone,
         tableNo: tableNo || '',
+        tableId: matchedTableId,
+        notes: notes || '',
         items: validatedItems.map(vi => ({ name: vi.productName, quantity: vi.quantity, price: vi.unitPrice })),
         totalAmount,
         status: 'pending',
@@ -312,13 +381,13 @@ const updateOrderStatus = async (req, res, next) => {
 
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'preparing', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'preparing', 'ready', 'served', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ status: 'error', message: 'Invalid order status value' });
     }
 
     // Fetch current order status and timeline
-    const orderRes = await db.query('SELECT status, timeline, order_number FROM orders WHERE id = $1', [parsedId]);
+    const orderRes = await db.query('SELECT status, timeline, order_number, table_number, table_id FROM orders WHERE id = $1', [parsedId]);
     const order = orderRes.rows[0];
     if (!order) {
       return res.status(404).json({ status: 'error', message: 'Order not found' });
@@ -328,12 +397,34 @@ const updateOrderStatus = async (req, res, next) => {
       return getOrderById(req, res, next);
     }
 
-    // Append timeline record
+    // Enforce strict state machine transitions
+    const allowedTransitions = {
+      pending: ['preparing', 'cancelled'],
+      preparing: ['ready', 'cancelled'],
+      ready: ['served', 'cancelled'],
+      served: ['completed', 'cancelled'],
+      completed: [],
+      cancelled: []
+    };
+
+    const currentStatus = order.status || 'pending';
+    const allowedNext = allowedTransitions[currentStatus] || [];
+
+    if (!allowedNext.includes(status)) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Invalid order status transition from "${currentStatus}" to "${status}". Allowed transitions: [${allowedNext.join(', ')}]`
+      });
+    }
+
+    // Append timeline record with performer identity
+    const performer = req.user ? `${req.user.name} (${req.user.role || 'Staff'})` : 'System Admin';
     const timeline = order.timeline || [];
     timeline.push({
       status,
       time: new Date().toISOString(),
-      note: `Order status updated to "${status.charAt(0).toUpperCase() + status.slice(1)}"`
+      note: `Order status updated to "${status.charAt(0).toUpperCase() + status.slice(1)}"`,
+      by: performer
     });
 
     // Update status in DB
@@ -346,8 +437,53 @@ const updateOrderStatus = async (req, res, next) => {
       return res.status(404).json({ status: 'error', message: 'Failed to update order status' });
     }
 
+    // Sync corresponding KOT status
+    const kotStatusMap = {
+      pending: 'new',
+      preparing: 'preparing',
+      ready: 'ready',
+      served: 'served',
+      completed: 'served',
+      cancelled: 'cancelled'
+    };
+    const targetKotStatus = kotStatusMap[status] || 'new';
+    await db.query(
+      'UPDATE kots SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2',
+      [targetKotStatus, parsedId]
+    );
+
+    const updatedOrderObj = updateRes.rows[0];
+    const targetTableNumber = updatedOrderObj.table_number;
+    const targetTableId = updatedOrderObj.table_id;
+
+    // Release table back to 'available' if order completed/cancelled and no other active orders remain
+    if ((status === 'completed' || status === 'cancelled') && (targetTableNumber || targetTableId)) {
+      const activeCheck = await db.query(
+        `SELECT COUNT(id)::integer FROM orders
+         WHERE status IN ('pending', 'preparing', 'ready', 'served')
+           AND (table_id = $1 OR (table_number IS NOT NULL AND LOWER(table_number) = LOWER($2)))
+           AND id != $3`,
+        [targetTableId || 0, targetTableNumber || '', parsedId]
+      );
+      const activeCount = parseInt(activeCheck.rows[0].count, 10);
+      if (activeCount === 0) {
+        await db.query(
+          `UPDATE tables SET status = 'available'
+           WHERE (id = $1 OR LOWER(table_number) = LOWER($2)) AND status != 'reserved'`,
+          [targetTableId || 0, targetTableNumber || '']
+        );
+      }
+    } else if ((status === 'pending' || status === 'preparing' || status === 'ready' || status === 'served') && (targetTableNumber || targetTableId)) {
+      // Mark table occupied if active
+      await db.query(
+        `UPDATE tables SET status = 'occupied'
+         WHERE (id = $1 OR LOWER(table_number) = LOWER($2)) AND status != 'reserved'`,
+        [targetTableId || 0, targetTableNumber || '']
+      );
+    }
+
     // Trigger notification
-    const typeMap = { completed: 'success', cancelled: 'error', preparing: 'info', pending: 'warning' };
+    const typeMap = { completed: 'success', served: 'success', ready: 'success', cancelled: 'error', preparing: 'info', pending: 'warning' };
     createNotification({
       title: `Order #${order.order_number || parsedId} ${status.charAt(0).toUpperCase() + status.slice(1)}`,
       message: `Order #${order.order_number || parsedId} status changed to "${status.charAt(0).toUpperCase() + status.slice(1)}".`,

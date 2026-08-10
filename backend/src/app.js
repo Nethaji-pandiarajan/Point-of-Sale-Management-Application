@@ -14,6 +14,11 @@ const adminRoutes = require('./routes/admin.routes');
 const profileRoutes = require('./routes/profile.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const restaurantRoutes = require('./routes/restaurant.routes');
+const tableRoutes = require('./routes/table.routes');
+const staffRoutes = require('./routes/staff.routes');
+const kotRoutes = require('./routes/kot.routes');
+const billRoutes = require('./routes/bill.routes');
+const reportRoutes = require('./routes/report.routes');
 
 const path = require('path');
 const app = express();
@@ -38,6 +43,11 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/restaurant', restaurantRoutes);
+app.use('/api/tables', tableRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/kots', kotRoutes);
+app.use('/api/bills', billRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Base / Health Check
 app.get('/api/health', (req, res) => {

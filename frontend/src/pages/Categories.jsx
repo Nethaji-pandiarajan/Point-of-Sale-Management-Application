@@ -5,16 +5,16 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
-import Modal from '../components/ui/Modal';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import useToast from '../hooks/useToast';
 import useConfirm from '../hooks/useConfirm';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categories';
-import { Plus, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, X } from 'lucide-react';
 import IconPickerModal from '../components/ui/IconPickerModal';
 import { getIconEmoji, getIconLabel } from '../utils/icons';
 import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable';
+import './Categories.css';
 
 const Categories = () => {
   const { addToast } = useToast();
@@ -26,6 +26,7 @@ const Categories = () => {
 
   // Modal & Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null); // null = Add, object = Edit
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -57,6 +58,27 @@ const Categories = () => {
     fetchCategoriesList();
   }, [fetchCategoriesList]);
 
+  // Handle Modal Close with Smooth Reverse Animation
+  const handleCloseModal = useCallback(() => {
+    if (submitting) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsModalOpen(false);
+      setIsClosing(false);
+    }, 260);
+  }, [submitting]);
+
+  // Keyboard Escape Key Handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isModalOpen && !submitting) {
+        handleCloseModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen, submitting, handleCloseModal]);
+
   // Open Modal Helpers
   const handleOpenAddModal = () => {
     setSelectedCategory(null);
@@ -65,6 +87,7 @@ const Categories = () => {
     setIcon('salad');
     setStatus('active');
     setFormErrors({});
+    setIsClosing(false);
     setIsModalOpen(true);
   };
 
@@ -75,6 +98,7 @@ const Categories = () => {
     setIcon(cat.icon);
     setStatus(cat.status);
     setFormErrors({});
+    setIsClosing(false);
     setIsModalOpen(true);
   };
 
@@ -130,7 +154,7 @@ const Categories = () => {
         await createCategory(payload);
         addToast(`Category "${payload.name}" created successfully`, 'success');
       }
-      setIsModalOpen(false);
+      handleCloseModal();
       fetchCategoriesList(); // reload categories
     } catch (err) {
       addToast(err.message || 'Failed to save category information', 'error');
@@ -308,118 +332,166 @@ const Categories = () => {
         />
       )}
 
-      {/* Add / Edit Category Dialog Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedCategory ? 'Edit Menu Category' : 'Add Menu Category'}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handleFormSubmit} isLoading={submitting}>
-              {selectedCategory ? 'Save Changes' : 'Create Category'}
-            </Button>
-          </>
-        }
-      >
-        <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Large Card Icon Picker Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Category Icon *</label>
-            <button
-              ref={iconPickerButtonRef}
-              type="button"
-              className="icon-picker-large-card"
-              onClick={() => setIsPickerOpen(true)}
-              disabled={submitting}
-              onMouseEnter={(e) => { if (!submitting) { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'; } }}
-              onMouseLeave={(e) => { if (!submitting) { e.currentTarget.style.borderColor = formErrors.icon ? 'var(--color-error)' : 'var(--color-border)'; e.currentTarget.style.backgroundColor = 'var(--color-surface)'; } }}
-              onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 3px rgba(183, 28, 28, 0.1)'; e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
-              onBlur={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = formErrors.icon ? 'var(--color-error)' : 'var(--color-border)'; }}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '20px',
-                border: formErrors.icon ? '2px dashed var(--color-error)' : '2px dashed var(--color-border)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-surface)',
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                width: '100%',
-                outline: 'none',
-                minHeight: '110px',
-                fontFamily: 'var(--font-body)',
-                transition: 'all var(--transition-fast)'
-              }}
-            >
-              {icon ? (
-                <>
-                  <span style={{ fontSize: '2.8rem', lineHeight: 1 }}>{getIconEmoji(icon)}</span>
-                  <span style={{ color: 'var(--color-primary)', fontWeight: '700', fontSize: '0.95rem' }}>
-                    {getIconLabel(icon)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: '2rem', color: 'var(--color-text-light)' }}>🍽️</span>
-                  <span style={{ color: 'var(--color-text-secondary)', fontWeight: '500', fontSize: '0.875rem' }}>
-                    Click to choose category icon
-                  </span>
-                </>
-              )}
-            </button>
-            {formErrors.icon && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.icon}</span>
-            )}
+      {/* Add / Edit Category 2-Column Restaurant Menu Card Modal */}
+      {isModalOpen && (
+        <div className={`menu-card-modal-overlay ${isClosing ? 'closing' : ''}`} onClick={handleCloseModal}>
+          <div className={`menu-card-container ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+            
+            {/* LEFT SIDE — CATEGORY PREVIEW PANEL */}
+            <div className="menu-card-preview-panel">
+              <div className="preview-decor-top">
+                <span className="preview-tag-badge">MENU CATEGORY</span>
+              </div>
+
+              <div className="preview-center-stage">
+                <div className="preview-icon-circle-wrapper">
+                  <div className="preview-icon-circle">
+                    <span key={icon} className="preview-icon-emoji category-icon-scale-in">{getIconEmoji(icon)}</span>
+                  </div>
+                </div>
+
+                <div className="preview-info-block">
+                  <h4 className="preview-category-name">
+                    {name.trim() ? name.trim() : 'NEW CATEGORY'}
+                  </h4>
+                  <p className="preview-category-desc">
+                    {description.trim() ? description.trim() : 'Organize your delicious dishes into this custom menu group.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="preview-footer-status">
+                <Badge variant={status === 'active' ? 'success' : 'secondary'}>
+                  {status === 'active' ? '● Active in Menu' : '○ Draft / Inactive'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* RIGHT SIDE — FORM CONTROLS */}
+            <div className="menu-card-form-panel">
+              <div className="menu-card-header">
+                <div>
+                  <h3 className="menu-card-title">
+                    {selectedCategory ? 'Edit Menu Category' : 'Create New Category'}
+                  </h3>
+                  <p className="menu-card-subtitle">
+                    Organize your menu with a new category
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="menu-card-close-btn"
+                  onClick={handleCloseModal}
+                  aria-label="Close modal"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="menu-card-form">
+                <div className="menu-card-form-body">
+                  
+                  {/* Category Name Input */}
+                  <div className="category-field-group">
+                    <label className="category-field-label">
+                      Category Name <span className="required-star">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={`category-input-control ${formErrors.name ? 'has-error' : ''}`}
+                      placeholder="e.g. Italian Pasta"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
+                      }}
+                      disabled={submitting}
+                      required
+                    />
+                    {formErrors.name && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.name}</span>
+                    )}
+                  </div>
+
+                  {/* Publishing Status & Icon row */}
+                  <div className="menu-card-form-row">
+                    <div className="category-field-group">
+                      <label className="category-field-label">
+                        Publishing Status
+                      </label>
+                      <div className="category-select-wrapper">
+                        <select
+                          className="category-select-control"
+                          value={status}
+                          onChange={(e) => setStatus(e.target.value)}
+                          disabled={submitting}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                        <span className="category-select-arrow" />
+                      </div>
+                    </div>
+
+                    <div className="category-field-group">
+                      <label className="category-field-label">
+                        Category Icon <span className="required-star">*</span>
+                      </label>
+                      <button
+                        ref={iconPickerButtonRef}
+                        type="button"
+                        className={`menu-card-icon-btn ${formErrors.icon ? 'has-error' : ''}`}
+                        onClick={() => setIsPickerOpen(true)}
+                        disabled={submitting}
+                      >
+                        <span key={icon + '-emoji'} className="icon-btn-emoji category-icon-scale-in">{getIconEmoji(icon)}</span>
+                        <span key={icon + '-label'} className="icon-btn-label category-icon-scale-in">{icon ? getIconLabel(icon) : 'Select Icon'}</span>
+                      </button>
+                      {formErrors.icon && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-error)' }}>{formErrors.icon}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Description Textarea */}
+                  <div className="category-field-group">
+                    <label className="category-field-label">Description</label>
+                    <textarea
+                      className="menu-card-textarea"
+                      placeholder="Short description of food/beverage items in this category"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      disabled={submitting}
+                    />
+                  </div>
+
+                </div>
+
+                {/* Bottom Footer Actions */}
+                <div className="menu-card-footer">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleCloseModal}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    isLoading={submitting}
+                    className="menu-card-submit-btn"
+                  >
+                    {selectedCategory ? 'Save Changes →' : 'Create Category →'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+
           </div>
-
-          <Input
-            label="Category Name"
-            placeholder="e.g. Pasta dishes"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (formErrors.name) setFormErrors(prev => ({ ...prev, name: '' }));
-            }}
-            error={formErrors.name}
-            disabled={submitting}
-            required
-            className="w-full"
-          />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Description</label>
-            <textarea
-              placeholder="Short description of items in this category"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={submitting}
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '0.95rem',
-                padding: '10px 14px',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-sm)',
-                minHeight: '80px',
-                outline: 'none',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <Select
-            label="Publishing Status"
-            options={statusOptions}
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            disabled={submitting}
-          />
-        </form>
-      </Modal>
+        </div>
+      )}
 
       {/* Modern Visual Icon Picker Overlay */}
       <IconPickerModal

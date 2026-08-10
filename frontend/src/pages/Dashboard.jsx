@@ -1,277 +1,161 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Card, { CardHeader, CardTitle, CardDescription, CardBody } from '../components/ui/Card';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import Card, { CardBody } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
-import AdvancedFilter from '../components/ui/AdvancedFilter';
-import { getOrders } from '../services/orders';
-import { getProducts } from '../services/products';
-import { getCustomers } from '../services/customers';
-import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, RefreshCw, Search, Sliders } from 'lucide-react';
-import { formatCurrency } from '../utils/helpers';
+import { getDashboardStats } from '../services/admin';
+import { getOrder, updateOrderStatus } from '../services/orders';
+import { generateBill, processPayment } from '../services/bills';
+import useToast from '../hooks/useToast';
+import useConfirm from '../hooks/useConfirm';
+import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, RefreshCw, Clock, CheckCircle2, Eye, LayoutGrid, ChefHat, Utensils, AlertCircle, ArrowRight, Play, XCircle, X, User, Mail, Phone, Receipt } from 'lucide-react';
+import { formatCurrency, formatDate, formatTime, getOrderTimeMetrics } from '../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import BillReceiptModal from '../components/BillReceiptModal/BillReceiptModal';
+import './Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { addToast } = useToast();
+  const confirm = useConfirm();
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [errorState, setErrorState] = useState(null);
 
-  // Original list state
-  const [masterOrdersList, setMasterOrdersList] = useState([]);
+  // Live clock state
+  const [currentTime, setCurrentTime] = useState(() => new Date());
 
-  // Filter UI states
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterValues, setFilterValues] = useState({
-    orderId: '',
-    customerName: '',
-    status: '',
-    paymentStatus: '',
-    fromDate: '',
-    toDate: '',
-    minAmount: '',
-    maxAmount: '',
-    sortBy: 'newest'
-  });
+  // Dashboard Data State
+  const [statsData, setStatsData] = useState(null);
 
-  // Dynamic metrics state
-  const [todaySales, setTodaySales] = useState(0);
-  const [activeOrders, setActiveOrders] = useState(0);
-  const [menuProducts, setMenuProducts] = useState(0);
-  const [totalCustomers, setTotalCustomers] = useState(0);
-  const [recentOrdersList, setRecentOrdersList] = useState([]);
+  // Selected Order Modal State
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
 
-  const loadDashboardData = useCallback(async () => {
-    setLoading(true);
+  // Bill Modal States
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
+  const [currentBill, setCurrentBill] = useState(null);
+  const [loadingBill, setLoadingBill] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const loadDashboardData = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
     setErrorState(null);
     try {
-      const [ordersRes, productsData, customersData] = await Promise.all([
-        getOrders({ limit: 100 }, 1, 100),
-        getProducts(),
-        getCustomers()
-      ]);
-
-      const ordersList = ordersRes.data;
-
-      // Save list
-      setMasterOrdersList(ordersList);
-
-      // 1. Calculate Menu Products Count
-      setMenuProducts(productsData.length);
-
-      // 2. Calculate Total Customers Count
-      setTotalCustomers(customersData.length);
-
-      // 3. Calculate Today's Sales (Completed orders sum)
-      const salesSum = ordersList
-        .filter(o => o.status === 'completed')
-        .reduce((sum, o) => sum + parseFloat(o.totalAmount), 0);
-      setTodaySales(salesSum);
-
-      // 4. Calculate Active Orders Count (Pending + Preparing)
-      const activeCount = ordersList.filter(o => o.status === 'pending' || o.status === 'preparing').length;
-      setActiveOrders(activeCount);
-
-      // 5. Select 4 most recent orders
-      setRecentOrdersList(ordersList.slice(0, 4));
-
-      // Reset filters
-      setSearchQuery('');
-      setFilterValues({
-        orderId: '',
-        customerName: '',
-        status: '',
-        paymentStatus: '',
-        fromDate: '',
-        toDate: '',
-        minAmount: '',
-        maxAmount: '',
-        sortBy: 'newest'
-      });
-
+      const data = await getDashboardStats();
+      setStatsData(data);
     } catch (err) {
       console.error('Error fetching dashboard records:', err);
-      setErrorState('Could not retrieve dashboard statistics. Verify server status.');
+      setErrorState('Could not retrieve live dashboard statistics. Verify connection.');
+      if (isManual) addToast('Failed to refresh dashboard stats', 'error');
     } finally {
       setLoading(false);
+      if (isManual) setRefreshing(false);
     }
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     loadDashboardData();
+    const autoRefresh = setInterval(() => loadDashboardData(), 15000);
+    return () => clearInterval(autoRefresh);
   }, [loadDashboardData]);
 
-  // Combined Search & Advanced Filters Logic
-  const applyDashboardFilters = useCallback((searchVal, filters) => {
-    let result = [...masterOrdersList];
+  const handleOpenOrderDetails = async (orderId) => {
+    setIsOrderModalOpen(true);
+    setLoadingOrderDetails(true);
+    try {
+      const data = await getOrder(orderId);
+      setSelectedOrder(data);
+    } catch (err) {
+      addToast('Failed to load order details', 'error');
+      setIsOrderModalOpen(false);
+    } finally {
+      setLoadingOrderDetails(false);
+    }
+  };
 
-    // 1. Search Query (Customer Name or Order ID)
-    if (searchVal) {
-      const term = searchVal.toLowerCase().trim();
-      result = result.filter(o => 
-        o.id.toString().toLowerCase().includes(term) ||
-        o.customerName.toLowerCase().includes(term)
-      );
+  const handleUpdateOrderStatus = async (newStatus) => {
+    if (statusSubmitting || !selectedOrder) return;
+
+    if (newStatus === 'cancelled') {
+      const confirmed = await confirm({
+        title: 'Cancel Order?',
+        message: `Are you sure you want to cancel Order #${selectedOrder.orderNo || selectedOrder.id}?`,
+        confirmLabel: 'Cancel Order',
+        cancelLabel: 'Keep Active',
+        variant: 'danger'
+      });
+      if (!confirmed) return;
     }
 
-    // 2. Advanced Order ID field
-    if (filters.orderId) {
-      const term = filters.orderId.toLowerCase().trim();
-      result = result.filter(o => o.id.toString().toLowerCase().includes(term));
+    setStatusSubmitting(true);
+    try {
+      const updated = await updateOrderStatus(selectedOrder.id, newStatus);
+      setSelectedOrder(updated);
+      addToast(`Order #${selectedOrder.orderNo || selectedOrder.id} status updated to ${newStatus.toUpperCase()}`, 'success');
+      loadDashboardData();
+    } catch (err) {
+      addToast(err.message || 'Failed to update order status', 'error');
+    } finally {
+      setStatusSubmitting(false);
     }
+  };
 
-    // 3. Customer Name
-    if (filters.customerName) {
-      const term = filters.customerName.toLowerCase().trim();
-      result = result.filter(o => o.customerName.toLowerCase().includes(term));
+  const handleOpenBill = async (orderId) => {
+    setIsBillModalOpen(true);
+    setLoadingBill(true);
+    try {
+      const billData = await generateBill(orderId);
+      setCurrentBill(billData);
+    } catch (err) {
+      addToast(err.message || 'Failed to generate bill for order', 'error');
+      setIsBillModalOpen(false);
+    } finally {
+      setLoadingBill(false);
     }
+  };
 
-    // 4. Order Status
-    if (filters.status) {
-      result = result.filter(o => o.status === filters.status);
-    }
-
-    // 5. Payment Status (Completed = Paid; all others = Unpaid)
-    if (filters.paymentStatus) {
-      if (filters.paymentStatus === 'paid') {
-        result = result.filter(o => o.status === 'completed');
-      } else if (filters.paymentStatus === 'unpaid') {
-        result = result.filter(o => o.status !== 'completed');
+  const handlePaymentComplete = async (billId, paymentMethod) => {
+    try {
+      const result = await processPayment(billId, { paymentMethod });
+      addToast(`Payment of ${formatCurrency(result.grandTotal)} completed successfully!`, 'success');
+      setCurrentBill(prev => ({ ...prev, paymentStatus: 'paid', paymentMethod }));
+      loadDashboardData();
+      if (selectedOrder) {
+        setSelectedOrder(prev => ({ ...prev, status: 'completed', paymentStatus: 'paid' }));
       }
-    }
-
-    // 6. Date Range
-    if (filters.fromDate) {
-      const from = new Date(filters.fromDate);
-      from.setHours(0, 0, 0, 0);
-      result = result.filter(o => new Date(o.createdAt) >= from);
-    }
-    if (filters.toDate) {
-      const to = new Date(filters.toDate);
-      to.setHours(23, 59, 59, 999);
-      result = result.filter(o => new Date(o.createdAt) <= to);
-    }
-
-    // 7. Minimum & Maximum Amounts
-    if (filters.minAmount) {
-      const min = parseFloat(filters.minAmount);
-      if (!isNaN(min)) {
-        result = result.filter(o => parseFloat(o.totalAmount) >= min);
-      }
-    }
-    if (filters.maxAmount) {
-      const max = parseFloat(filters.maxAmount);
-      if (!isNaN(max)) {
-        result = result.filter(o => parseFloat(o.totalAmount) <= max);
-      }
-    }
-
-    // 8. Sorting options
-    if (filters.sortBy) {
-      if (filters.sortBy === 'newest') {
-        result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      } else if (filters.sortBy === 'oldest') {
-        result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-      } else if (filters.sortBy === 'highest') {
-        result.sort((a, b) => parseFloat(b.totalAmount) - parseFloat(a.totalAmount));
-      } else if (filters.sortBy === 'lowest') {
-        result.sort((a, b) => parseFloat(a.totalAmount) - parseFloat(b.totalAmount));
-      }
-    }
-
-    // Recalculate metrics based on filtered results
-    const salesSum = result
-      .filter(o => o.status === 'completed')
-      .reduce((sum, o) => sum + parseFloat(o.totalAmount), 0);
-    setTodaySales(salesSum);
-
-    const activeCount = result.filter(o => o.status === 'pending' || o.status === 'preparing').length;
-    setActiveOrders(activeCount);
-
-    // Limit Recent Orders display to 4 records
-    setRecentOrdersList(result.slice(0, 4));
-  }, [masterOrdersList]);
-
-  // Handle Input Field Changes
-  const handleFieldChange = (fieldName, value) => {
-    setFilterValues(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-  };
-
-  // Action Triggers
-  const handleApplyFilters = () => {
-    applyDashboardFilters(searchQuery, filterValues);
-  };
-
-  const handleResetFilters = () => {
-    const defaultFilters = {
-      orderId: '',
-      customerName: '',
-      status: '',
-      paymentStatus: '',
-      fromDate: '',
-      toDate: '',
-      minAmount: '',
-      maxAmount: '',
-      sortBy: 'newest'
-    };
-    setFilterValues(defaultFilters);
-    applyDashboardFilters(searchQuery, defaultFilters);
-  };
-
-  // Search input handler
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    applyDashboardFilters(query, filterValues);
-  };
-
-  const getStatusVariant = (status) => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'preparing': return 'info';
-      case 'pending': return 'warning';
-      case 'cancelled': return 'error';
-      default: return 'secondary';
+    } catch (err) {
+      addToast(err.message || 'Failed to complete payment', 'error');
     }
   };
 
-  const getItemsTextSummary = (items) => {
-    if (!items || items.length === 0) return 'No items';
-    const summary = items.map(i => `${i.quantity}x ${i.name}`).join(', ');
-    return summary.length > 40 ? `${summary.slice(0, 40)}...` : summary;
+  const getStatusBadge = (tableStatus) => {
+    switch (tableStatus) {
+      case 'available': return <Badge variant="success">Available</Badge>;
+      case 'occupied': return <Badge variant="info">Occupied</Badge>;
+      case 'reserved': return <Badge variant="warning">Reserved</Badge>;
+      default: return <Badge variant="secondary">{tableStatus}</Badge>;
+    }
   };
 
-  // Definition of Advanced Filter Config Fields
-  const filterFields = [
-    { name: 'orderId', label: 'Order ID', type: 'text', placeholder: 'e.g. 7' },
-    { name: 'customerName', label: 'Customer Name', type: 'text', placeholder: 'e.g. Jonathan' },
-    { name: 'status', label: 'Order Status', type: 'select', options: [
-      { value: '', label: 'All Statuses' },
-      { value: 'pending', label: 'Pending' },
-      { value: 'preparing', label: 'Preparing' },
-      { value: 'completed', label: 'Completed' },
-      { value: 'cancelled', label: 'Cancelled' }
-    ] },
-    { name: 'paymentStatus', label: 'Payment Status', type: 'select', options: [
-      { value: '', label: 'All Payments' },
-      { value: 'paid', label: 'Paid' },
-      { value: 'unpaid', label: 'Unpaid' }
-    ] },
-    { name: 'fromDate', label: 'From Date', type: 'date' },
-    { name: 'toDate', label: 'To Date', type: 'date' },
-    { name: 'minAmount', label: 'Minimum Amount', type: 'number', placeholder: 'Min ₹' },
-    { name: 'maxAmount', label: 'Maximum Amount', type: 'number', placeholder: 'Max ₹' },
-    { name: 'sortBy', label: 'Sort By', type: 'select', options: [
-      { value: 'newest', label: 'Newest First' },
-      { value: 'oldest', label: 'Oldest First' },
-      { value: 'highest', label: 'Highest Amount' },
-      { value: 'lowest', label: 'Lowest Amount' }
-    ] }
-  ];
+  const getOrderStatusBadge = (orderStatus) => {
+    switch (orderStatus) {
+      case 'pending': return <Badge variant="warning">New Order</Badge>;
+      case 'preparing': return <Badge variant="info">Preparing</Badge>;
+      case 'ready': return <Badge variant="success">Ready</Badge>;
+      case 'served': return <Badge variant="success">Served</Badge>;
+      case 'completed': return <Badge variant="success">Completed</Badge>;
+      case 'cancelled': return <Badge variant="error">Cancelled</Badge>;
+      default: return <Badge variant="secondary">{orderStatus}</Badge>;
+    }
+  };
 
   if (loading) {
     return (
@@ -281,12 +165,12 @@ const Dashboard = () => {
     );
   }
 
-  if (errorState) {
+  if (errorState && !statsData) {
     return (
       <Card>
         <CardBody style={{ textAlign: 'center', padding: '40px' }}>
           <p className="text-secondary" style={{ marginBottom: '16px' }}>{errorState}</p>
-          <Button variant="secondary" icon={RefreshCw} onClick={loadDashboardData}>
+          <Button variant="secondary" icon={RefreshCw} onClick={() => loadDashboardData(true)}>
             Retry Fetching
           </Button>
         </CardBody>
@@ -294,145 +178,452 @@ const Dashboard = () => {
     );
   }
 
-  const stats = [
-    { title: 'Today\'s Sales', value: formatCurrency(todaySales), desc: 'Completed sales totals', icon: IndianRupee, color: 'primary' },
-    { title: 'Active Orders', value: activeOrders.toString(), desc: 'Pending and preparing', icon: ShoppingBag, color: 'primary' },
-    { title: 'Menu Products', value: menuProducts.toString(), desc: 'Active menu selections', icon: UtensilsCrossed, color: 'primary' },
-    { title: 'Total Customers', value: totalCustomers.toString(), desc: 'Registered guest profiles', icon: Users, color: 'primary' }
-  ];
+  const {
+    totalTables = 0,
+    availableTables = 0,
+    occupiedTables = 0,
+    reservedTables = 0,
+    activeOrders = 0,
+    newKotOrders = 0,
+    preparingOrders = 0,
+    readyOrders = 0,
+    todayCompletedOrders = 0,
+    todayRevenue = 0,
+    floorTables = [],
+    feeds = { newKots: [], readyOrders: [], recentOrders: [] }
+  } = statsData || {};
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-      {/* Redesigned Summary Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '20px'
-      }}>
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={idx} className="hover-lift" style={{ position: 'relative', overflow: 'hidden' }}>
-              <CardBody style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '24px' }}>
-                <div style={{
-                  padding: '12px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--color-primary-light)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--shadow-sm)'
-                }}>
-                  <Icon size={24} />
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{stat.title}</p>
-                  <h3 style={{ fontSize: '1.75rem', fontWeight: '800', marginTop: '2px', letterSpacing: '-0.02em', color: 'var(--color-primary)' }}>{stat.value}</h3>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>{stat.desc}</span>
-                </div>
-              </CardBody>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Recent Orders table */}
-      <Card>
-        <CardHeader style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '16px' }}>
-          <div>
-            <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Live incoming customer dining transactions</CardDescription>
-          </div>
-          <Button variant="secondary" size="sm" onClick={() => navigate('/orders')}>
-            View All Orders
-          </Button>
-        </CardHeader>
-        
-        {/* Search and Filters Toggle row */}
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
-            <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-secondary)' }} size={18} />
-            <input
-              type="text"
-              placeholder="Search by Customer Name or Order ID..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              style={{
-                width: '100%',
-                padding: '10px 14px 10px 40px',
-                borderRadius: '10px',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'var(--color-background)',
-                outline: 'none',
-                fontSize: '0.875rem'
-              }}
-            />
-          </div>
+      {/* Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Restaurant Command Center</h2>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+            Real-time Dine-In tables, active kitchen orders, and sales performance overview
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
           <Button
-            variant={isFilterOpen ? 'primary' : 'secondary'}
-            icon={Sliders}
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            style={{ borderRadius: '10px' }}
+            variant="secondary"
+            icon={RefreshCw}
+            onClick={() => loadDashboardData(true)}
+            isLoading={refreshing}
           >
-            Filters
+            Refresh Data
           </Button>
         </div>
+      </div>
 
-        {/* Dynamic Expandable Filter Panel */}
-        <AdvancedFilter
-          isOpen={isFilterOpen}
-          fields={filterFields}
-          values={filterValues}
-          onFieldChange={handleFieldChange}
-          onApply={handleApplyFilters}
-          onReset={handleResetFilters}
-        />
-
-        <CardBody style={{ padding: '0px' }}>
-          {recentOrdersList.length === 0 ? (
-            <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--color-text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '2.5rem' }}>🔍</span>
-              <div>
-                <p style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>No matching orders found</p>
-                <p style={{ fontSize: '0.875rem', marginTop: '4px' }}>Try widening your filter conditions or checking spelling.</p>
-              </div>
+      {/* 1. DINE-IN METRICS OVERVIEW CARDS */}
+      <div className="dash-metrics-grid">
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-total"><LayoutGrid size={20} /></div>
+              <span className="dash-metric-label">Total Tables</span>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Items Ordered</TableHead>
-                  <TableHead style={{ textAlign: 'right' }}>Total Amount</TableHead>
-                  <TableHead style={{ textAlign: 'center' }}>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrdersList.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell style={{ fontWeight: '700', color: 'var(--color-primary)' }}>{order.id}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                      {getItemsTextSummary(order.items)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'right', fontWeight: '600' }}>
-                      {formatCurrency(order.totalAmount)}
-                    </TableCell>
-                    <TableCell style={{ textAlign: 'center' }}>
-                      <Badge variant={getStatusVariant(order.status)}>
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+            <h3 className="dash-metric-val">{totalTables}</h3>
+            <span className="dash-metric-sub">{availableTables} Available • {occupiedTables} Occupied</span>
+          </CardBody>
+        </Card>
+
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-avail"><CheckCircle2 size={20} /></div>
+              <span className="dash-metric-label">Available Tables</span>
+            </div>
+            <h3 className="dash-metric-val text-success">{availableTables}</h3>
+            <span className="dash-metric-sub">Ready for guests</span>
+          </CardBody>
+        </Card>
+
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-occ"><Users size={20} /></div>
+              <span className="dash-metric-label">Occupied Tables</span>
+            </div>
+            <h3 className="dash-metric-val text-info">{occupiedTables}</h3>
+            <span className="dash-metric-sub">Active dining guests</span>
+          </CardBody>
+        </Card>
+
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-active"><ShoppingBag size={20} /></div>
+              <span className="dash-metric-label">Active Orders</span>
+            </div>
+            <h3 className="dash-metric-val text-primary">{activeOrders}</h3>
+            <span className="dash-metric-sub">Pending to Served</span>
+          </CardBody>
+        </Card>
+
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-kot"><ChefHat size={20} /></div>
+              <span className="dash-metric-label">Kitchen Status</span>
+            </div>
+            <h3 className="dash-metric-val" style={{ fontSize: '1.25rem' }}>
+              🔴 {newKotOrders} <span style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: '400' }}>New</span> • 🟠 {preparingOrders} <span style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: '400' }}>Prep</span>
+            </h3>
+            <span className="dash-metric-sub">🟢 {readyOrders} Ready for Pickup</span>
+          </CardBody>
+        </Card>
+
+        <Card className="dash-metric-card">
+          <CardBody>
+            <div className="dash-metric-row">
+              <div className="dash-metric-icon bg-rev"><IndianRupee size={20} /></div>
+              <span className="dash-metric-label">Today's Revenue</span>
+            </div>
+            <h3 className="dash-metric-val text-success">{formatCurrency(todayRevenue)}</h3>
+            <span className="dash-metric-sub">{todayCompletedOrders} completed orders today</span>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* 2. VISUAL RESTAURANT FLOOR PLAN OVERVIEW */}
+      <Card>
+        <CardBody>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: '700' }}>Restaurant Floor Plan & Table Live Overview</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                Click any occupied table card to view and manage its active live order
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" icon={ArrowRight} onClick={() => navigate('/tables')}>
+              Manage Tables Module
+            </Button>
+          </div>
+
+          <div className="floor-grid-container">
+            {floorTables.map((tbl) => {
+              const isOccupied = tbl.status === 'occupied';
+              return (
+                <div
+                  key={tbl.id}
+                  className={`floor-table-card ${tbl.status}`}
+                  onClick={() => {
+                    if (isOccupied && tbl.activeOrderId) {
+                      handleOpenOrderDetails(tbl.activeOrderId);
+                    } else {
+                      navigate('/tables');
+                    }
+                  }}
+                >
+                  <div className="floor-table-header">
+                    <span className="floor-table-name">{tbl.tableNumber}</span>
+                    {getStatusBadge(tbl.status)}
+                  </div>
+
+                  <div className="floor-table-capacity">
+                    👥 {tbl.capacity} {tbl.capacity === 1 ? 'Seat' : 'Seats'}
+                  </div>
+
+                  {isOccupied && tbl.activeOrderNo ? (
+                    <div className="floor-active-order-box">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span className="floor-order-no">#{tbl.activeOrderNo}</span>
+                        <span className="floor-order-status">{tbl.activeOrderStatus}</span>
+                      </div>
+                      {tbl.assignedWaiter && (
+                        <div className="floor-waiter">Server: {tbl.assignedWaiter}</div>
+                      )}
+                      {tbl.activeOrderTotal && (
+                        <div className="floor-total">{formatCurrency(parseFloat(tbl.activeOrderTotal))}</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="floor-available-msg">
+                      {tbl.status === 'reserved' ? 'Reserved' : 'Ready for guests'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </CardBody>
       </Card>
+
+      {/* 3. COMPACT FEEDS SECTION */}
+      <div className="dash-feeds-grid">
+        
+        {/* NEW KITCHEN KOTs FEED */}
+        <Card>
+          <CardBody>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ChefHat size={18} style={{ color: 'var(--color-primary)' }} />
+                New Kitchen KOTs ({feeds.newKots?.length || 0})
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/kitchen')}>
+                Open KDS
+              </Button>
+            </div>
+
+            {feeds.newKots?.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', textAlign: 'center', padding: '20px 0' }}>
+                No new KOT tickets pending
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {feeds.newKots?.map((kot) => (
+                  <div
+                    key={kot.id}
+                    className="dash-feed-item"
+                    onClick={() => navigate('/kitchen')}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: '700', color: 'var(--color-primary)', fontSize: '0.85rem' }}>{kot.kotNumber}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{formatTime(kot.createdAt)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#1E293B', marginTop: '2px' }}>
+                      🍽️ <strong>{kot.tableNo || 'Dine-In'}</strong> • Server: {kot.waiterName}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* RECENTLY READY ORDERS FEED */}
+        <Card>
+          <CardBody>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={18} style={{ color: '#2E7D32' }} />
+                Ready for Service ({feeds.readyOrders?.length || 0})
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/orders')}>
+                All Orders
+              </Button>
+            </div>
+
+            {feeds.readyOrders?.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', textAlign: 'center', padding: '20px 0' }}>
+                No orders waiting for pickup
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {feeds.readyOrders?.map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="dash-feed-item"
+                    onClick={() => handleOpenOrderDetails(ord.id)}
+                    style={{ borderLeft: '3px solid #2E7D32' }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>#{ord.orderNo || ord.id}</span>
+                      <span style={{ fontWeight: '700', color: 'var(--color-text-primary)', fontSize: '0.85rem' }}>{formatCurrency(ord.totalAmount)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#2E7D32', marginTop: '2px', fontWeight: '600' }}>
+                      🍽️ {ord.tableNo || 'Table'} • Ready for Waiter
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* RECENT ORDERS TABLE */}
+        <Card style={{ gridColumn: 'span 2' }}>
+          <CardBody>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShoppingBag size={18} style={{ color: 'var(--color-primary)' }} />
+                Recent Dine-In Transactions
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/orders')}>
+                View All Orders
+              </Button>
+            </div>
+
+            {feeds.recentOrders?.length === 0 ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', textAlign: 'center', padding: '20px 0' }}>
+                No recent order records
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="dash-orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Table</th>
+                      <th>Server</th>
+                      <th>Order Status</th>
+                      <th>Payment</th>
+                      <th style={{ textAlign: 'right' }}>Total</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {feeds.recentOrders?.map((ord) => (
+                      <tr key={ord.id}>
+                        <td style={{ fontWeight: '700' }}>#{ord.orderNo || ord.id}</td>
+                        <td style={{ fontWeight: '600', color: 'var(--color-primary)' }}>🍽️ {ord.tableNo || 'Takeaway'}</td>
+                        <td>{ord.customerName}</td>
+                        <td>{getOrderStatusBadge(ord.status)}</td>
+                        <td>
+                          <Badge variant={ord.paymentStatus === 'paid' ? 'success' : 'secondary'}>
+                            {ord.paymentStatus || 'unpaid'}
+                          </Badge>
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: '700' }}>{formatCurrency(ord.totalAmount)}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <Button variant="ghost" size="sm" icon={Eye} onClick={() => handleOpenOrderDetails(ord.id)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+      </div>
+
+      {/* Order Command Center Details Modal */}
+      {isOrderModalOpen && (
+        <div className="order-command-overlay" onClick={() => setIsOrderModalOpen(false)}>
+          <div className="order-command-container" onClick={(e) => e.stopPropagation()}>
+            
+            <div className="order-command-header">
+              <div>
+                <div className="order-command-title-row">
+                  <h3 className="order-command-id">
+                    ORDER #{selectedOrder?.orderNo || selectedOrder?.id}
+                  </h3>
+                  {selectedOrder && getOrderStatusBadge(selectedOrder.status)}
+                </div>
+                {selectedOrder && (
+                  <p className="order-command-meta">
+                    Placed • {formatDate(selectedOrder.createdAt)}, {formatTime(selectedOrder.createdAt)} • {getOrderTimeMetrics(selectedOrder, currentTime).primaryText}
+                  </p>
+                )}
+              </div>
+              <button type="button" className="order-command-close-btn" onClick={() => setIsOrderModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {loadingOrderDetails ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <Spinner size="md" />
+              </div>
+            ) : selectedOrder ? (
+              <div className="order-command-body">
+                <div className="order-command-grid">
+                  <div>
+                    <h4 className="command-section-title">
+                      <ShoppingBag size={16} style={{ color: 'var(--color-primary)' }} />
+                      Order Items ({selectedOrder.items?.length || 0})
+                    </h4>
+
+                    <div className="command-items-list">
+                      {selectedOrder.items?.map((item, idx) => (
+                        <div key={idx} className="command-item-card">
+                          <div className="command-item-left">
+                            <span style={{ fontWeight: '800', color: 'var(--color-primary)', marginRight: '8px' }}>
+                              {item.quantity}x
+                            </span>
+                            <span className="command-item-name">{item.name}</span>
+                          </div>
+                          <span className="command-item-price">{formatCurrency(item.quantity * item.price)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="command-summary-box">
+                      <div className="command-summary-row total">
+                        <span>ORDER TOTAL</span>
+                        <span>{formatCurrency(selectedOrder.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="command-section-title">
+                      <User size={16} style={{ color: 'var(--color-primary)' }} />
+                      Table & Waiter Details
+                    </h4>
+
+                    <div className="command-info-card">
+                      <div className="command-info-item">
+                        <User size={16} className="command-info-icon" />
+                        <div className="command-info-text">
+                          <span className="command-info-label">Assigned Waiter</span>
+                          <span className="command-info-val">{selectedOrder.customerName}</span>
+                        </div>
+                      </div>
+                      <div className="command-info-item">
+                        <Utensils size={16} className="command-info-icon" />
+                        <div className="command-info-text">
+                          <span className="command-info-label">Dining Table</span>
+                          <span className="service-pill-badge">🍽️ {selectedOrder.tableNo || 'Table'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="order-command-footer">
+              {selectedOrder && selectedOrder.status !== 'cancelled' && (
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {selectedOrder.status === 'pending' && (
+                    <Button variant="primary" icon={Play} onClick={() => handleUpdateOrderStatus('preparing')} isLoading={statusSubmitting}>
+                      Start Preparing
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'preparing' && (
+                    <Button variant="primary" icon={CheckCircle2} onClick={() => handleUpdateOrderStatus('ready')} isLoading={statusSubmitting}>
+                      Mark Ready
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'ready' && (
+                    <Button variant="primary" icon={CheckCircle2} onClick={() => handleUpdateOrderStatus('served')} isLoading={statusSubmitting}>
+                      Mark Served
+                    </Button>
+                  )}
+                  {(selectedOrder.status === 'served' || selectedOrder.status === 'completed') && (
+                    <Button variant="primary" icon={Receipt} onClick={() => handleOpenBill(selectedOrder.id)}>
+                      {selectedOrder.paymentStatus === 'paid' ? 'View Bill Receipt' : 'Generate & Pay Bill'}
+                    </Button>
+                  )}
+                  {selectedOrder.status !== 'completed' && (
+                    <Button variant="danger" icon={XCircle} onClick={() => handleUpdateOrderStatus('cancelled')} isLoading={statusSubmitting}>
+                      Cancel Order
+                    </Button>
+                  )}
+                </div>
+              )}
+              <Button variant="ghost" onClick={() => setIsOrderModalOpen(false)}>Close</Button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Bill Receipt Modal */}
+      {isBillModalOpen && (
+        <BillReceiptModal
+          bill={currentBill}
+          loading={loadingBill}
+          onClose={() => setIsBillModalOpen(false)}
+          onPaymentComplete={handlePaymentComplete}
+        />
+      )}
+
     </div>
   );
 };

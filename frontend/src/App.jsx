@@ -16,11 +16,15 @@ import AuthLayout from './layouts/AuthLayout';
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Kitchen from './pages/Kitchen';
+import Tables from './pages/Tables';
+import Staff from './pages/Staff';
 import Categories from './pages/Categories';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
 import ProfileSettings from './pages/ProfileSettings';
+import Reports from './pages/Reports';
 // Global UI Shells
 import ToastContainer from './components/ui/Toast';
 import ConfirmDialog from './components/ui/ConfirmDialog';
@@ -62,10 +66,14 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route element={<DashboardShell />}>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/kitchen" element={<Kitchen />} />
+                  <Route path="/tables" element={<Tables />} />
+                  <Route path="/staff" element={<Staff />} />
                   <Route path="/categories" element={<Categories />} />
                   <Route path="/products" element={<Products />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/customers" element={<Customers />} />
+                  <Route path="/reports" element={<Reports />} />
                   <Route path="/profile" element={<ProfileSettings />} />
                 </Route>
               </Route>
