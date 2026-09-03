@@ -1,3 +1,61 @@
+/* Orders Management Tab Bar Switcher */
+.orders-tabs-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid var(--color-border, #E2E8F0);
+  margin-bottom: 4px;
+}
+
+.orders-tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.orders-tab-item:hover {
+  color: var(--color-primary, #E53935);
+  background-color: rgba(229, 57, 53, 0.04);
+  border-radius: 8px 8px 0 0;
+}
+
+.orders-tab-item.active {
+  color: var(--color-primary, #E53935);
+  font-weight: 700;
+  border-bottom-color: var(--color-primary, #E53935);
+  background-color: rgba(229, 57, 53, 0.05);
+  border-radius: 8px 8px 0 0;
+}
+
+.orders-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: #F1F5F9;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.orders-tab-item.active .orders-tab-badge {
+  background-color: var(--color-primary, #E53935);
+  color: #FFFFFF;
+}
+
 .orders-filter-container {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;

@@ -237,29 +237,65 @@
 /* --- DINE-IN COMMAND CENTER DASHBOARD STYLES --- */
 .dash-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 1279px) {
+  .dash-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 840px) {
+  .dash-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .dash-metrics-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dash-metric-card {
+  width: 100%;
+  min-height: 175px;
+  background-color: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-metric-card .card-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .dash-metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .dash-metric-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 22px;
+  height: 42px;
 }
 
 .dash-metric-icon {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -275,26 +311,69 @@
 .dash-metric-icon.bg-rev { background-color: #FFF0F0; color: var(--color-primary, #E53E3E); }
 
 .dash-metric-label {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #64748B;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1.3;
 }
 
 .dash-metric-val {
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
   color: #0F172A;
-  margin: 0;
-  line-height: 1.2;
+  margin: 0 0 8px 0;
 }
 
 .dash-metric-sub {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: #64748B;
-  margin-top: 4px;
+  line-height: 1.45;
+  margin: 0;
   display: block;
+}
+
+/* Kitchen Status List */
+.kitchen-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.kitchen-status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot-red { background-color: #EF4444; }
+.dot-orange { background-color: #F97316; }
+.dot-green { background-color: #22C55E; }
+
+.kitchen-val {
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  color: #0F172A;
+  font-size: 0.9rem;
+}
+
+.kitchen-lbl {
+  color: #64748B;
+  font-weight: 500;
 }
 
 /* Floor Plan Overview Grid */

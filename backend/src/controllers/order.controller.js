@@ -32,10 +32,15 @@ const getOrders = async (req, res, next) => {
     let index = 1;
 
     if (status) {
-      countQueryText += ` AND o.status = $${index}`;
-      queryText += ` AND o.status = $${index}`;
-      params.push(status);
-      index++;
+      if (status === 'incomplete') {
+        countQueryText += ` AND o.status NOT IN ('completed', 'cancelled')`;
+        queryText += ` AND o.status NOT IN ('completed', 'cancelled')`;
+      } else {
+        countQueryText += ` AND o.status = $${index}`;
+        queryText += ` AND o.status = $${index}`;
+        params.push(status);
+        index++;
+      }
     }
 
     if (tableNo) {
@@ -86,12 +91,19 @@ const getOrders = async (req, res, next) => {
 
     // Get total count
     const countRes = await db.query(countQueryText, params);
-    const totalCount = countRes.rows[0].count;
+    const totalCount = parseInt(countRes.rows[0].count, 10);
+
+    // Get tab count summaries
+    const incCountRes = await db.query(`SELECT COUNT(id)::integer FROM orders WHERE status NOT IN ('completed', 'cancelled')`);
+    const compCountRes = await db.query(`SELECT COUNT(id)::integer FROM orders WHERE status = 'completed'`);
+    const incompleteCount = parseInt(incCountRes.rows[0].count, 10);
+    const completedCount = parseInt(compCountRes.rows[0].count, 10);
 
     // Add pagination & sorting
+    const sortClause = status === 'incomplete' ? 'ORDER BY o.created_at ASC' : 'ORDER BY o.updated_at DESC, o.created_at DESC';
     queryText += `
       GROUP BY o.id, u.name, u.email, u.phone
-      ORDER BY o.created_at DESC
+      ${sortClause}
     `;
 
     const limitNum = parseInt(limit, 10);
@@ -103,9 +115,9 @@ const getOrders = async (req, res, next) => {
     params.push(limitNum);
     params.push(offset);
 
-    const ordersRes = await db.query(queryText, params);
+    const result = await db.query(queryText, params);
 
-    const formatted = ordersRes.rows.map(row => ({
+    const formatted = result.rows.map(row => ({
       id: row.id,
       orderNo: row.orderNo,
       orderType: row.orderType,

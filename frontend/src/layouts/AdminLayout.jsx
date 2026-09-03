@@ -62,7 +62,7 @@ const AdminLayout = ({ children }) => {
     if (path === '/categories') return 'Categories';
     if (path === '/products') return 'Food Products';
     if (path === '/orders') return 'Orders';
-    if (path === '/staff') return 'Staff & Waiter Management';
+    if (path === '/staff') return 'Staff Management';
     if (path === '/customers') return 'Customers';
     if (path === '/reports') return 'Reports & Analytics';
     if (path === '/profile') return 'Profile & Settings';
@@ -76,7 +76,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Categories', path: '/categories', icon: Tags },
     { name: 'Food Products', path: '/products', icon: UtensilsCrossed },
     { name: 'Orders', path: '/orders', icon: ShoppingBag },
-    { name: 'Staff & Waiters', path: '/staff', icon: UserCheck },
+    { name: 'Staff Management', path: '/staff', icon: UserCheck },
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Reports', path: '/reports', icon: BarChart3 },
     { name: 'Profile & Settings', path: '/profile', icon: Settings }
@@ -125,18 +125,6 @@ const AdminLayout = ({ children }) => {
             );
           })}
         </nav>
-
-        {!isCollapsed && (
-          <div className="sidebar-promo-card">
-            <div className="promo-icon-container">
-              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 18h18M4 21h16M12 5c-3.87 0-7 3.13-7 7h14c0-3.87-3.13-7-7-7z" />
-              </svg>
-            </div>
-            <h4 className="promo-title">Delicious food, Happy customers</h4>
-            <p className="promo-desc">Great food brings people together.</p>
-          </div>
-        )}
 
         <div className="sidebar-footer">
           <button

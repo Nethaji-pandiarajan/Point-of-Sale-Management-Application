@@ -42,6 +42,7 @@ const Tables = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [selectedTable, setSelectedTable] = useState(null); // null = Add, object = Edit
+  const [tableCode, setTableCode] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [capacity, setCapacity] = useState('4');
   const [status, setStatus] = useState('available');
@@ -111,6 +112,7 @@ const Tables = () => {
 
   const handleOpenAddModal = () => {
     setSelectedTable(null);
+    setTableCode('');
     setTableNumber('');
     setCapacity('4');
     setStatus('available');
@@ -121,6 +123,7 @@ const Tables = () => {
 
   const handleOpenEditModal = (table) => {
     setSelectedTable(table);
+    setTableCode(table.tableCode || '');
     setTableNumber(table.tableNumber);
     setCapacity(table.capacity.toString());
     setStatus(table.status);
@@ -173,10 +176,6 @@ const Tables = () => {
 
   const validateForm = () => {
     const errors = {};
-    if (!tableNumber.trim()) {
-      errors.tableNumber = 'Table number/name is required';
-    }
-
     const capNum = parseInt(capacity, 10);
     if (!capacity || isNaN(capNum) || capNum <= 0) {
       errors.capacity = 'Capacity must be at least 1 seat';
@@ -198,17 +197,18 @@ const Tables = () => {
     setSubmitting(true);
     try {
       const payload = {
-        tableNumber: tableNumber.trim(),
+        tableCode: tableCode.trim() || undefined,
+        tableNumber: tableNumber.trim() || undefined,
         capacity: parseInt(capacity, 10),
         status
       };
 
       if (selectedTable) {
         await updateTable(selectedTable.id, payload);
-        addToast(`Table "${payload.tableNumber}" updated successfully`, 'success');
+        addToast(`Table "${payload.tableCode || selectedTable.tableCode}" updated successfully\nTable details have been updated.`, 'success');
       } else {
-        await createTable(payload);
-        addToast(`Table "${payload.tableNumber}" created successfully`, 'success');
+        const res = await createTable(payload);
+        addToast(`Table "${res.tableCode || 'created'}" added successfully\nTable is now available for orders.`, 'success');
       }
 
       handleCloseModal();
@@ -223,7 +223,7 @@ const Tables = () => {
   const handleDeleteTable = async (table) => {
     const confirmed = await confirm({
       title: 'Delete Table?',
-      message: `Are you sure you want to delete "${table.tableNumber}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${table.tableNumber}" (${table.tableCode || 'ID: ' + table.id})? This action cannot be undone.`,
       confirmLabel: 'Delete Table',
       cancelLabel: 'Cancel',
       variant: 'danger'
@@ -233,7 +233,7 @@ const Tables = () => {
 
     try {
       await deleteTable(table.id);
-      addToast(`Table "${table.tableNumber}" deleted successfully`, 'success');
+      addToast(`Table "${table.tableCode || table.tableNumber}" deleted successfully\nRemoved table from active floor plan.`, 'success');
       fetchTablesList(page);
     } catch (err) {
       addToast(err.message || 'Failed to delete table', 'error');
@@ -365,18 +365,25 @@ const Tables = () => {
           ]}
           columns={[
             {
-              key: 'id',
-              title: 'ID',
+              key: 'tableCode',
+              title: 'Table ID',
               sortable: true,
-              render: (t) => <span style={{ fontWeight: '600' }}>#{t.id}</span>
+              render: (t) => (
+                <span style={{ fontWeight: '700', color: 'var(--color-primary, #E53935)', fontFamily: 'var(--font-body), monospace' }}>
+                  {t.tableCode || `TAB${String(t.id).padStart(2, '0')}`}
+                </span>
+              )
             },
             {
               key: 'tableNumber',
               title: 'Table Number / Name',
               sortable: true,
               render: (t) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{t.tableNumber}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+                    ID: {t.tableCode || `TAB${String(t.id).padStart(2, '0')}`}
+                  </span>
                 </div>
               )
             },
@@ -500,6 +507,15 @@ const Tables = () => {
             <form onSubmit={handleFormSubmit}>
               <div className="table-modal-body">
                 <Input
+                  label="Table ID (VARCHAR / String)"
+                  placeholder="Auto-generated (e.g. TAB01, TAB02)"
+                  value={tableCode}
+                  onChange={(e) => setTableCode(e.target.value.toUpperCase())}
+                  disabled={submitting}
+                  helperText="Format: TAB01, TAB02 (Leave empty to auto-assign)"
+                />
+
+                <Input
                   label="Table Number / Name"
                   placeholder="e.g. Table 1 or Patio Table 4"
                   value={tableNumber}
@@ -509,7 +525,6 @@ const Tables = () => {
                   }}
                   error={formErrors.tableNumber}
                   disabled={submitting}
-                  required
                 />
 
                 <Input

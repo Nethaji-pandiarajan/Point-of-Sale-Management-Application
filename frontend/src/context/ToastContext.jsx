@@ -9,16 +9,37 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+  const addToast = useCallback((msg, type = 'success', duration = 3500, subtitle = '') => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
-    
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
+
+    let titleText = '';
+    let subText = subtitle;
+    let toastType = type;
+
+    if (typeof msg === 'object' && msg !== null) {
+      titleText = msg.title || msg.message || '';
+      subText = msg.subtitle || msg.description || subtitle;
+      toastType = msg.type || type;
+    } else if (typeof msg === 'string') {
+      const parts = msg.split('\n');
+      titleText = parts[0];
+      if (parts.length > 1) {
+        subText = parts.slice(1).join(' ');
+      }
     }
-  }, [removeToast]);
+
+    setToasts((prev) => [
+      ...prev,
+      {
+        id,
+        title: titleText,
+        subtitle: subText,
+        type: toastType,
+        duration: duration || 3500,
+        createdAt: Date.now()
+      }
+    ]);
+  }, []);
 
   const value = React.useMemo(() => ({
     addToast,

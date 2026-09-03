@@ -153,18 +153,18 @@ const Reports = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="report-page-container">
       
       {/* Top Header & Filter Controls */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Dine-In Reports & Analytics</h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+      <div className="report-header-bar">
+        <div className="report-header-text">
+          <h2 className="report-header-title">Dine-In Reports & Analytics</h2>
+          <p className="report-header-subtitle">
             Comprehensive sales, product popularity, table utilization, waiter performance, and revenue reports
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="report-header-controls">
           {/* Preset Range Selector */}
           <div className="report-range-pills">
             {DATE_RANGE_PRESETS.map(preset => (
@@ -180,14 +180,14 @@ const Reports = () => {
           </div>
 
           {dateRange === 'custom' && (
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="report-custom-date-group">
               <input
                 type="date"
                 className="report-date-input"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
               />
-              <span style={{ fontSize: '0.85rem', color: '#64748B' }}>to</span>
+              <span className="report-date-sep">to</span>
               <input
                 type="date"
                 className="report-date-input"
@@ -197,7 +197,13 @@ const Reports = () => {
             </div>
           )}
 
-          <Button variant="secondary" icon={Download} onClick={exportToCSV} disabled={loading || !reportData}>
+          <Button
+            variant="secondary"
+            icon={Download}
+            onClick={exportToCSV}
+            disabled={loading || !reportData}
+            className="report-export-btn"
+          >
             Export CSV
           </Button>
         </div>
@@ -258,7 +264,7 @@ const Reports = () => {
 
               <Card>
                 <CardBody>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>Daily Sales Timeline Breakdown</h3>
+                  <h3 className="report-section-heading">Daily Sales Timeline Breakdown</h3>
                   <div style={{ overflowX: 'auto' }}>
                     <table className="report-data-table">
                       <thead>
@@ -292,7 +298,7 @@ const Reports = () => {
           {activeTab === 'products' && (
             <Card>
               <CardBody>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>Best-Selling Products Breakdown</h3>
+                <h3 className="report-section-heading">Best-Selling Products Breakdown</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="report-data-table">
                     <thead>
@@ -325,7 +331,7 @@ const Reports = () => {
           {activeTab === 'categories' && (
             <Card>
               <CardBody>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>Category Sales & Volume Summary</h3>
+                <h3 className="report-section-heading">Category Sales & Volume Summary</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="report-data-table">
                     <thead>
@@ -358,7 +364,7 @@ const Reports = () => {
           {activeTab === 'tables' && (
             <Card>
               <CardBody>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>Table Turnover & Revenue Performance</h3>
+                <h3 className="report-section-heading">Table Turnover & Revenue Performance</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="report-data-table">
                     <thead>
@@ -391,7 +397,7 @@ const Reports = () => {
           {activeTab === 'waiters' && (
             <Card>
               <CardBody>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '16px' }}>Staff / Waiter Performance Report</h3>
+                <h3 className="report-section-heading">Staff / Waiter Performance Report</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="report-data-table">
                     <thead>

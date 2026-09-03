@@ -16,20 +16,61 @@ import AdvancedDataTable from '../components/AdvancedDataTable/AdvancedDataTable
 import BillReceiptModal from '../components/BillReceiptModal/BillReceiptModal';
 import './Orders.css';
 
-const OrderTimeCell = ({ order, currentTime }) => {
-  const { primaryText, secondaryText, urgency } = getOrderTimeMetrics(order, currentTime);
+const getIncompleteOrderTime = (order, now = new Date()) => {
+  if (!order || !order.createdAt) return { primaryText: '—', secondaryText: '' };
+  const createdTime = new Date(order.createdAt);
+  if (isNaN(createdTime.getTime())) return { primaryText: '—', secondaryText: '' };
 
-  return (
-    <div className={`order-time-cell urgency-${urgency}`}>
-      <div className="order-time-primary">
-        <Clock size={13} className="order-time-icon" />
-        <span>{primaryText}</span>
-        {urgency === 'attention' && <span className="order-time-badge">Attention</span>}
-        {urgency === 'delayed' && <span className="order-time-badge">Delayed</span>}
-      </div>
-      <span className="order-time-secondary">{secondaryText}</span>
-    </div>
-  );
+  const diffMs = Math.max(0, now.getTime() - createdTime.getTime());
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+  let primaryText = '';
+  if (diffMinutes < 60) {
+    primaryText = `${diffMinutes} min`;
+  } else {
+    const hrs = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    primaryText = `${hrs} hr ${mins < 10 ? '0' + mins : mins} min`;
+  }
+
+  const secondaryText = `Placed at ${formatTime(order.createdAt)}`;
+  return { primaryText, secondaryText, diffMinutes };
+};
+
+const getCompletedOrderTime = (order) => {
+  if (!order) return { primaryText: '—', secondaryText: '' };
+  
+  let compDate = null;
+  const timeline = Array.isArray(order.timeline) ? order.timeline : [];
+  const compEvent = timeline.find(t => t.status === 'completed');
+  if (compEvent && compEvent.time) {
+    compDate = new Date(compEvent.time);
+  } else if (order.completedAt) {
+    compDate = new Date(order.completedAt);
+  } else if (order.updatedAt) {
+    compDate = new Date(order.updatedAt);
+  } else if (order.createdAt) {
+    compDate = new Date(order.createdAt);
+  }
+
+  if (!compDate || isNaN(compDate.getTime())) {
+    return { primaryText: '—', secondaryText: '' };
+  }
+
+  const today = new Date();
+  const isToday = compDate.toDateString() === today.toDateString();
+
+  if (isToday) {
+    return {
+      primaryText: formatTime(compDate),
+      secondaryText: 'Completed today'
+    };
+  }
+
+  return {
+    primaryText: `${formatDate(compDate)}, ${formatTime(compDate)}`,
+    secondaryText: ''
+  };
 };
 
 const Orders = () => {
@@ -39,6 +80,11 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState(null);
+
+  // Tab State ('incomplete' | 'completed')
+  const [activeTab, setActiveTab] = useState('incomplete');
+  const [incompleteCount, setIncompleteCount] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
 
   // Bill Modal states
   const [isBillModalOpen, setIsBillModalOpen] = useState(false);
@@ -102,8 +148,12 @@ const Orders = () => {
     setLoading(true);
     setErrorState(null);
     try {
+      const targetStatus = activeTab === 'incomplete' 
+        ? (filterStatus || 'incomplete') 
+        : 'completed';
+
       const filters = {
-        status: filterStatus,
+        status: targetStatus,
         tableNo: filterTableNo,
         waiterName: filterWaiterName,
         paymentStatus: filterPaymentStatus,
@@ -117,6 +167,12 @@ const Orders = () => {
       setOrders(response.data);
       setTotalPages(response.pagination.totalPages);
       setTotalCount(response.pagination.totalCount);
+      if (response.pagination.incompleteCount !== undefined) {
+        setIncompleteCount(response.pagination.incompleteCount);
+      }
+      if (response.pagination.completedCount !== undefined) {
+        setCompletedCount(response.pagination.completedCount);
+      }
       setPage(response.pagination.page);
     } catch (err) {
       console.error(err);
@@ -125,13 +181,13 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate, addToast]);
+  }, [activeTab, filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate, addToast]);
 
-  // Fetch on mount or filter changes
+  // Fetch on mount, tab change, or filter changes
   useEffect(() => {
     setPage(1);
     fetchOrders(1);
-  }, [filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate]);
+  }, [activeTab, filterStatus, filterTableNo, filterWaiterName, filterPaymentStatus, filterSearch, filterStartDate, filterEndDate]);
 
   // Handle Page navigation
   const handlePageChange = (pageNum) => {
@@ -204,7 +260,7 @@ const Orders = () => {
   const handlePaymentComplete = async (billId, paymentMethod) => {
     try {
       const result = await processPayment(billId, { paymentMethod });
-      addToast(`Payment of $${result.grandTotal?.toFixed(2)} completed successfully!`, 'success');
+      addToast(`Payment of ${formatCurrency(result.grandTotal)} completed successfully!`, 'success');
       
       setCurrentBill(prev => ({ ...prev, paymentStatus: 'paid', paymentMethod }));
       
@@ -245,7 +301,7 @@ const Orders = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -255,6 +311,34 @@ const Orders = () => {
             Monitor, track, and update live restaurant table orders throughout the service lifecycle
           </p>
         </div>
+      </div>
+
+      {/* 1. INCOMPLETE vs COMPLETED ORDERS TAB BAR */}
+      <div className="orders-tabs-wrapper">
+        <button
+          type="button"
+          className={`orders-tab-item ${activeTab === 'incomplete' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('incomplete');
+            setFilterStatus('');
+            setPage(1);
+          }}
+        >
+          <span>Incomplete Orders</span>
+          <span className="orders-tab-badge">{incompleteCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`orders-tab-item ${activeTab === 'completed' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('completed');
+            setFilterStatus('');
+            setPage(1);
+          }}
+        >
+          <span>Completed Orders</span>
+          <span className="orders-tab-badge">{completedCount}</span>
+        </button>
       </div>
 
       {/* Advanced Enterprise Data Table */}
@@ -269,14 +353,14 @@ const Orders = () => {
         </Card>
       ) : (
         <AdvancedDataTable
-          tableKey="orders"
+          tableKey={`orders-${activeTab}`}
           data={orders}
           loading={loading}
           searchFields={['id', 'orderNo', 'customerName', 'tableNo', 'notes']}
           searchPlaceholder="Search order ID, waiter, table, or items... (Ctrl+F)"
           onRefresh={() => fetchOrders(page)}
-          emptyStateTitle="No Orders Found"
-          emptyStateDescription="We couldn't find any transaction matching your query filters."
+          emptyStateTitle={activeTab === 'incomplete' ? "No active orders right now." : "No completed orders yet."}
+          emptyStateDescription={activeTab === 'incomplete' ? "New dine-in orders will appear here." : "Orders marked as Completed will be stored here."}
           serverSide={true}
           serverTotalItems={totalCount}
           serverPage={page}
@@ -296,24 +380,24 @@ const Orders = () => {
             setPage(1);
           }}
           filterConfigs={[
-            {
+            ...(activeTab === 'incomplete' ? [{
               key: 'status',
               label: 'Order Status',
               type: 'select',
               options: [
+                { value: '', label: 'All Active Statuses' },
                 { value: 'pending', label: 'New Order' },
                 { value: 'preparing', label: 'Preparing' },
                 { value: 'ready', label: 'Ready' },
-                { value: 'served', label: 'Served' },
-                { value: 'completed', label: 'Completed' },
-                { value: 'cancelled', label: 'Cancelled' }
+                { value: 'served', label: 'Served' }
               ]
-            },
+            }] : []),
             {
               key: 'paymentStatus',
               label: 'Payment Status',
               type: 'select',
               options: [
+                { value: '', label: 'All Payment Statuses' },
                 { value: 'unpaid', label: 'Unpaid' },
                 { value: 'paid', label: 'Paid' }
               ]
@@ -399,10 +483,37 @@ const Orders = () => {
               render: (ord) => getPaymentStatusBadge(ord.paymentStatus)
             },
             {
-              key: 'createdAt',
-              title: 'Order Time',
+              key: 'time',
+              title: activeTab === 'incomplete' ? 'Live Time' : 'Completed At',
               sortable: true,
-              render: (ord) => <OrderTimeCell order={ord} currentTime={currentTime} />
+              render: (ord) => {
+                if (activeTab === 'incomplete') {
+                  const { primaryText, secondaryText, diffMinutes } = getIncompleteOrderTime(ord, currentTime);
+                  const urgency = diffMinutes >= 20 ? 'delayed' : diffMinutes >= 10 ? 'attention' : 'normal';
+
+                  return (
+                    <div className={`order-time-cell urgency-${urgency}`}>
+                      <div className="order-time-primary">
+                        <Clock size={13} className="order-time-icon" />
+                        <span style={{ fontWeight: '700' }}>{primaryText}</span>
+                      </div>
+                      <span className="order-time-secondary">{secondaryText}</span>
+                    </div>
+                  );
+                } else {
+                  const { primaryText, secondaryText } = getCompletedOrderTime(ord);
+
+                  return (
+                    <div className="order-time-cell urgency-normal">
+                      <div className="order-time-primary">
+                        <CheckCircle2 size={13} className="order-time-icon text-success" />
+                        <span style={{ fontWeight: '700' }}>{primaryText}</span>
+                      </div>
+                      {secondaryText && <span className="order-time-secondary">{secondaryText}</span>}
+                    </div>
+                  );
+                }
+              }
             },
             {
               key: 'actions',
@@ -414,10 +525,10 @@ const Orders = () => {
                     variant="ghost"
                     size="sm"
                     icon={Receipt}
-                    title="View & Pay Bill"
+                    title={activeTab === 'incomplete' ? 'View & Pay Bill' : 'Print Receipt'}
                     onClick={() => handleOpenBill(ord.id)}
                   >
-                    {ord.paymentStatus === 'paid' ? 'Receipt' : 'Bill'}
+                    {activeTab === 'incomplete' ? 'Bill' : 'Receipt'}
                   </Button>
                   <Button
                     variant="ghost"

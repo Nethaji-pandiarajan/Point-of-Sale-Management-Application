@@ -268,10 +268,23 @@ const Dashboard = () => {
               <div className="dash-metric-icon bg-kot"><ChefHat size={20} /></div>
               <span className="dash-metric-label">Kitchen Status</span>
             </div>
-            <h3 className="dash-metric-val" style={{ fontSize: '1.25rem' }}>
-              🔴 {newKotOrders} <span style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: '400' }}>New</span> • 🟠 {preparingOrders} <span style={{ fontSize: '0.85rem', color: '#64748B', fontWeight: '400' }}>Prep</span>
-            </h3>
-            <span className="dash-metric-sub">🟢 {readyOrders} Ready for Pickup</span>
+            <div className="kitchen-status-list">
+              <div className="kitchen-status-item">
+                <span className="status-dot dot-red"></span>
+                <span className="kitchen-val">{newKotOrders}</span>
+                <span className="kitchen-lbl">New Orders</span>
+              </div>
+              <div className="kitchen-status-item">
+                <span className="status-dot dot-orange"></span>
+                <span className="kitchen-val">{preparingOrders}</span>
+                <span className="kitchen-lbl">Preparing</span>
+              </div>
+              <div className="kitchen-status-item">
+                <span className="status-dot dot-green"></span>
+                <span className="kitchen-val">{readyOrders}</span>
+                <span className="kitchen-lbl">Ready for Pickup</span>
+              </div>
+            </div>
           </CardBody>
         </Card>
 
@@ -318,7 +331,12 @@ const Dashboard = () => {
                   }}
                 >
                   <div className="floor-table-header">
-                    <span className="floor-table-name">{tbl.tableNumber}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="floor-table-name">{tbl.tableNumber}</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--color-primary, #E53935)', fontWeight: '800' }}>
+                        ID: {tbl.tableCode || `TAB${String(tbl.id).padStart(2, '0')}`}
+                      </span>
+                    </div>
                     {getStatusBadge(tbl.status)}
                   </div>
 

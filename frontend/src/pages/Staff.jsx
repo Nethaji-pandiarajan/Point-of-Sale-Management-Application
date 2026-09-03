@@ -280,7 +280,7 @@ const Staff = () => {
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Staff & Waiter Management</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '600' }}>Staff Management</h2>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
             Manage restaurant waiters, service personnel accounts, and login access for Dine-In ordering
           </p>

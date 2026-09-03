@@ -161,7 +161,7 @@ const getDashboardStats = async (req, res, next) => {
 
     // 4. Floor Overview Tables List (with active order link)
     const floorTablesRes = await db.query(`
-      SELECT t.id, t.table_number AS "tableNumber", t.capacity, t.status,
+      SELECT t.id, t.table_code AS "tableCode", t.table_number AS "tableNumber", t.capacity, t.status,
              ao.id AS "activeOrderId",
              ao.order_number AS "activeOrderNo",
              ao.status AS "activeOrderStatus",
@@ -171,7 +171,7 @@ const getDashboardStats = async (req, res, next) => {
       LEFT JOIN LATERAL (
         SELECT o.id, o.order_number, o.status, o.total_amount, o.user_id
         FROM orders o
-        WHERE (o.table_id = t.id OR LOWER(o.table_number) = LOWER(t.table_number))
+        WHERE (o.table_id = t.id OR LOWER(o.table_number) = LOWER(t.table_number) OR LOWER(o.table_number) = LOWER(t.table_code))
           AND o.status IN ('pending', 'preparing', 'ready', 'served')
         ORDER BY o.created_at DESC
         LIMIT 1
