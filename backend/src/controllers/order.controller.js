@@ -511,7 +511,145 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+
+const addItemsToOrder = async (req, res, next) => {
+  const client = await db.pool.connect();
+  try {
+    const { id } = req.params;
+    const parsedOrderId = parseInt(id, 10);
+    if (isNaN(parsedOrderId)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid order ID' });
+    }
+
+    const { items, notes } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ status: 'error', message: 'Order must contain at least one item' });
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Fetch current order
+    const orderRes = await client.query('SELECT * FROM orders WHERE id = $1', [parsedOrderId]);
+    const order = orderRes.rows[0];
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      throw new Error('Cannot add items to a completed or cancelled order');
+    }
+
+    // 2. Fetch user
+    const userId = req.user ? req.user.id : order.user_id;
+    const userRes = await client.query('SELECT name, email, phone FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0] || { name: 'Staff' };
+
+    // 3. Validate new items and calculate added subtotal
+    let additionalSubtotal = 0;
+    const validatedItems = [];
+
+    for (const item of items) {
+      const { productId, quantity } = item;
+      const parsedProductId = parseInt(productId, 10);
+      const qNum = parseInt(quantity, 10);
+
+      if (isNaN(parsedProductId)) throw new Error('Product ID must be an integer');
+      if (isNaN(qNum) || qNum <= 0) throw new Error('Item quantity must be a positive integer');
+
+      const prodRes = await client.query('SELECT name, price, is_available FROM products WHERE id = $1', [parsedProductId]);
+      const product = prodRes.rows[0];
+      if (!product) throw new Error(`Product ID ${parsedProductId} not found`);
+      if (!product.is_available) throw new Error(`Product "${product.name}" is currently unavailable/out of stock`);
+
+      const unitPrice = parseFloat(product.price);
+      const totalPrice = unitPrice * qNum;
+      additionalSubtotal += totalPrice;
+
+      validatedItems.push({
+        productId: parsedProductId,
+        productName: product.name,
+        quantity: qNum,
+        unitPrice,
+        totalPrice
+      });
+    }
+
+    // 4. Insert new order items
+    for (const val of validatedItems) {
+      await client.query(`
+        INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, total_price)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [parsedOrderId, val.productId, val.productName, val.quantity, val.unitPrice, val.totalPrice]);
+    }
+
+    // 5. Update order totals & timeline
+    const newSubtotal = parseFloat(order.subtotal || 0) + additionalSubtotal;
+    const newTotal = parseFloat(order.total_amount || 0) + additionalSubtotal;
+
+    const timeline = order.timeline || [];
+    const itemNames = validatedItems.map(vi => `${vi.quantity}x ${vi.productName}`).join(', ');
+    timeline.push({
+      status: order.status,
+      time: new Date().toISOString(),
+      note: `Added items: ${itemNames}`,
+      by: user.name
+    });
+
+    await client.query(`
+      UPDATE orders
+      SET subtotal = $1, total_amount = $2, timeline = $3, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+    `, [newSubtotal, newTotal, JSON.stringify(timeline), parsedOrderId]);
+
+    // 6. Generate supplementary KOT for only the new items
+    const year = new Date().getFullYear();
+    const kotCountRes = await client.query(
+      "SELECT COUNT(id)::integer FROM kots WHERE created_at >= $1 AND created_at <= $2",
+      [`${year}-01-01 00:00:00`, `${year}-12-31 23:59:59`]
+    );
+    const nextKotNum = (kotCountRes.rows[0].count + 1).toString().padStart(6, '0');
+    const kotNumber = `KOT-${year}-${nextKotNum}`;
+
+    const kotItemsJson = JSON.stringify(
+      validatedItems.map(vi => ({
+        productId: vi.productId,
+        name: vi.productName,
+        quantity: vi.quantity
+      }))
+    );
+
+    await client.query(`
+      INSERT INTO kots (kot_number, order_id, table_number, waiter_id, waiter_name, status, notes, items)
+      VALUES ($1, $2, $3, $4, $5, 'new', $6, $7)
+    `, [kotNumber, parsedOrderId, order.table_number || '', userId, user.name, notes || 'Additional items', kotItemsJson]);
+
+    await client.query('COMMIT');
+
+    // Create notification
+    createNotification({
+      title: 'Additional Items Added',
+      message: `Supplementary KOT ${kotNumber} generated for Order #${order.order_number} (${order.table_number || 'Dine-In'}). Added: ${itemNames}.`,
+      type: 'info',
+      icon: 'shopping-bag',
+      reference_type: 'order',
+      reference_id: parsedOrderId,
+      created_by: userId
+    });
+
+    return getOrderById(req, res, next);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(400).json({
+      status: 'error',
+      message: e.message || 'Failed to add items to order'
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
+  addItemsToOrder,
   getOrders,
   getOrderById,
   createOrder,

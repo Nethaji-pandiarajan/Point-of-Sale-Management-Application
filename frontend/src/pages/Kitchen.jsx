@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Card, { CardBody } from '../components/ui/Card';
+import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
 import useToast from '../hooks/useToast';
 import { getKots, updateKotStatus, getKot } from '../services/kots';
-import { RefreshCw, Clock, ChefHat, Play, CheckCircle2, ShoppingBag, X, User, Utensils, MessageSquare, AlertCircle, Filter, Search } from 'lucide-react';
+import { 
+  RefreshCw, Clock, ChefHat, Play, CheckCircle2, ShoppingBag, X, User, 
+  Utensils, MessageSquare, AlertTriangle, Search, Maximize2, ChevronLeft, 
+  ChevronRight, ChevronDown, ChevronUp 
+} from 'lucide-react';
 import { formatTime, getOrderTimeMetrics } from '../utils/helpers';
 import './Kitchen.css';
+
+// Default KDS Overview displays maximum 3 complete cards per page per column
+const OVERVIEW_ITEMS_PER_PAGE = 3;
 
 const Kitchen = () => {
   const { addToast } = useToast();
@@ -25,6 +30,17 @@ const Kitchen = () => {
   const [filterWaiterName, setFilterWaiterName] = useState('');
   const [filterSearch, setFilterSearch] = useState('');
 
+  // Per-column Pagination States
+  const [pageNew, setPageNew] = useState(1);
+  const [pagePreparing, setPagePreparing] = useState(1);
+  const [pageReady, setPageReady] = useState(1);
+
+  // Card items expand state map: { [kotId]: boolean }
+  const [expandedKotIds, setExpandedKotIds] = useState({});
+
+  // Focus View State: null | 'new' | 'preparing' | 'ready' | 'served'
+  const [focusColumn, setFocusColumn] = useState(null);
+
   // Updating state for active status button
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -32,6 +48,39 @@ const Kitchen = () => {
   const [selectedKot, setSelectedKot] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  // Helper to sort KOTs oldest-first so longest-waiting stay at top
+  const sortByOldest = (list) => {
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.createdAt || a.created_at || 0).getTime();
+      const timeB = new Date(b.createdAt || b.created_at || 0).getTime();
+      return timeA - timeB;
+    });
+  };
+
+  // Filter & Sort Active Kitchen Columns
+  const newKots = sortByOldest(kots.filter(k => k.status === 'new'));
+  const preparingKots = sortByOldest(kots.filter(k => k.status === 'preparing'));
+  const readyKots = sortByOldest(kots.filter(k => k.status === 'ready'));
+
+  // Reset column pagination when filters change
+  useEffect(() => {
+    setPageNew(1);
+    setPagePreparing(1);
+    setPageReady(1);
+  }, [filterStatus, filterTableNo, filterWaiterName, filterSearch]);
+
+  // Recalculate pagination bounds whenever KOT counts change (e.g. after status transitions)
+  useEffect(() => {
+    const maxPageNew = Math.max(1, Math.ceil(newKots.length / OVERVIEW_ITEMS_PER_PAGE));
+    if (pageNew > maxPageNew) setPageNew(maxPageNew);
+
+    const maxPagePrep = Math.max(1, Math.ceil(preparingKots.length / OVERVIEW_ITEMS_PER_PAGE));
+    if (pagePreparing > maxPagePrep) setPagePreparing(maxPagePrep);
+
+    const maxPageReady = Math.max(1, Math.ceil(readyKots.length / OVERVIEW_ITEMS_PER_PAGE));
+    if (pageReady > maxPageReady) setPageReady(maxPageReady);
+  }, [newKots.length, preparingKots.length, readyKots.length]);
 
   // Auto Refresh & Live Clock Ticks
   useEffect(() => {
@@ -105,11 +154,239 @@ const Kitchen = () => {
     }
   };
 
-  // Filter Active Kitchen Columns
-  const newKots = kots.filter(k => k.status === 'new');
-  const preparingKots = kots.filter(k => k.status === 'preparing');
-  const readyKots = kots.filter(k => k.status === 'ready');
-  const servedKots = kots.filter(k => k.status === 'served');
+  const toggleExpandKot = (kotId, e) => {
+    if (e) e.stopPropagation();
+    setExpandedKotIds(prev => ({
+      ...prev,
+      [kotId]: !prev[kotId]
+    }));
+  };
+
+  // Pagination helper
+  const getPaginatedData = (items, page, pageSize = OVERVIEW_ITEMS_PER_PAGE) => {
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const currentPage = Math.min(Math.max(1, page), totalPages);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, total);
+    const paginatedItems = items.slice(startIndex, endIndex);
+    return { items: paginatedItems, currentPage, totalPages, startIndex, endIndex, total };
+  };
+
+  const paginatedNew = getPaginatedData(newKots, pageNew);
+  const paginatedPreparing = getPaginatedData(preparingKots, pagePreparing);
+  const paginatedReady = getPaginatedData(readyKots, pageReady);
+
+  // Render Card Items with compact 3-item truncation & inline toggle
+  const renderCardItems = (kot) => {
+    const items = kot.items || [];
+    const isExpanded = !!expandedKotIds[kot.id];
+    const hasMore = items.length > 3;
+    const displayItems = isExpanded ? items : items.slice(0, 3);
+
+    return (
+      <div className="kds-ticket-items">
+        {displayItems.map((item, idx) => (
+          <div key={idx} className="kds-item-row">
+            <div className="kds-item-qty">{item.quantity}x</div>
+            <span className="kds-item-name">{item.name}</span>
+          </div>
+        ))}
+        {hasMore && (
+          <button
+            type="button"
+            className="kds-items-toggle-btn"
+            onClick={(e) => toggleExpandKot(kot.id, e)}
+          >
+            {isExpanded ? (
+              <>
+                <span>Show less</span>
+                <ChevronUp size={13} />
+              </>
+            ) : (
+              <>
+                <span>+{items.length - 3} more items</span>
+                <ChevronDown size={13} />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // Render Compact KOT Card Component specifically for quick kitchen scanning
+  const renderKotCard = (kot, columnType) => {
+    const { primaryText, urgency } = getOrderTimeMetrics(kot, currentTime);
+    const isUrgent = urgency === 'delayed';
+    const isWarning = urgency === 'attention';
+
+    // Check for additional items indicator
+    const isAdditional = kot.isAdditional || kot.is_additional || 
+      (kot.notes && /additional/i.test(kot.notes)) || 
+      (kot.type && /additional/i.test(kot.type));
+
+    let cardClass = `kds-ticket-card ${columnType}`;
+    if (isUrgent) cardClass += ' urgency-delayed';
+    else if (isWarning) cardClass += ' urgency-warning';
+
+    return (
+      <div
+        key={kot.id}
+        className={cardClass}
+        onClick={() => handleOpenDetails(kot.id)}
+      >
+        {/* ROW 1: Table Badge (left) & Additional Items Label / Elapsed Time (right) */}
+        <div className="kds-ticket-row-1">
+          <div className="kds-row-1-left">
+            <span className={`kds-table-badge ${columnType}`}>
+              🍽️ {kot.tableNo || 'Dine-In'}
+            </span>
+            {isAdditional && (
+              <span className="kds-additional-badge">
+                Additional Items
+              </span>
+            )}
+          </div>
+
+          <div className="kds-row-1-right">
+            {isUrgent && (
+              <span className="kds-urgency-pill delayed" title="Delayed Order (>20m)">
+                <AlertTriangle size={12} />
+                URGENT
+              </span>
+            )}
+            {isWarning && !isUrgent && (
+              <span className="kds-urgency-pill warning" title="Waiting >10m">
+                <Clock size={12} />
+                10m+
+              </span>
+            )}
+            <span className={`kds-ticket-time ${isUrgent ? 'time-delayed' : ''}`}>
+              <Clock size={12} />
+              {primaryText}
+            </span>
+          </div>
+        </div>
+
+        {/* ROW 2: KOT Number & Order Number */}
+        <div className="kds-ticket-row-2">
+          <span className="kds-kot-num">{kot.kotNumber}</span>
+          <span className="kds-order-bullet">•</span>
+          <span className="kds-order-num">Order #{kot.orderNo}</span>
+        </div>
+
+        {/* ROW 3: Waiter / Server Name */}
+        <div className="kds-ticket-row-3">
+          <span>Server: <strong>{kot.waiterName || 'Staff'}</strong></span>
+        </div>
+
+        {/* ITEM SECTION: Max first 2-3 items */}
+        {renderCardItems(kot)}
+
+        {/* SPECIAL NOTES BOX */}
+        {kot.notes && (
+          <div className="kds-notes-box">
+            <MessageSquare size={13} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>Note: {kot.notes}</span>
+          </div>
+        )}
+
+        {/* BOTTOM: Full-width Primary Action */}
+        <div className="kds-ticket-footer">
+          {columnType === 'pending' && (
+            <button
+              type="button"
+              className="kds-action-btn start"
+              onClick={(e) => handleUpdateStatus(kot.id, 'preparing', e)}
+              disabled={updatingId === kot.id}
+            >
+              <Play size={16} fill="currentColor" />
+              Start Preparing
+            </button>
+          )}
+
+          {columnType === 'preparing' && (
+            <button
+              type="button"
+              className="kds-action-btn ready"
+              onClick={(e) => handleUpdateStatus(kot.id, 'ready', e)}
+              disabled={updatingId === kot.id}
+            >
+              <CheckCircle2 size={16} />
+              Mark Ready
+            </button>
+          )}
+
+          {columnType === 'ready' && (
+            <button
+              type="button"
+              className="kds-action-btn served"
+              onClick={(e) => handleUpdateStatus(kot.id, 'served', e)}
+              disabled={updatingId === kot.id}
+            >
+              <CheckCircle2 size={16} />
+              Mark Served
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render Column Pagination Controls (Pinned at bottom)
+  const renderPaginationFooter = (paginatedData, setPage) => {
+    const { currentPage, totalPages, startIndex, endIndex, total } = paginatedData;
+    if (total === 0) return null;
+
+    return (
+      <div className="kds-pagination-footer">
+        <span className="kds-page-info">
+          Showing {total > 0 ? startIndex + 1 : 0}–{endIndex} of {total}
+        </span>
+        <div className="kds-page-controls">
+          <button
+            type="button"
+            className="kds-page-btn"
+            disabled={currentPage <= 1}
+            onClick={() => setPage(prev => Math.max(1, prev - 1))}
+            title="Previous Page"
+          >
+            <ChevronLeft size={15} />
+            <span>Prev</span>
+          </button>
+          <span className="kds-page-indicator">{currentPage} / {totalPages}</span>
+          <button
+            type="button"
+            className="kds-page-btn"
+            disabled={currentPage >= totalPages}
+            onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+            title="Next Page"
+          >
+            <span>Next</span>
+            <ChevronRight size={15} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Focus View Configuration
+  const getFocusColumnDetails = () => {
+    if (!focusColumn) return null;
+    if (focusColumn === 'new') {
+      return { title: 'NEW KOTs', count: newKots.length, data: newKots, type: 'pending', color: '#B71C1C' };
+    }
+    if (focusColumn === 'preparing') {
+      return { title: 'PREPARING IN KITCHEN', count: preparingKots.length, data: preparingKots, type: 'preparing', color: '#E65100' };
+    }
+    if (focusColumn === 'ready') {
+      return { title: 'READY FOR SERVICE', count: readyKots.length, data: readyKots, type: 'ready', color: '#2E7D32' };
+    }
+    return null;
+  };
+
+  const focusDetails = getFocusColumnDetails();
 
   return (
     <div className="kitchen-kds-container">
@@ -195,12 +472,11 @@ const Kitchen = () => {
             <option value="new">🔴 New KOTs</option>
             <option value="preparing">🟠 Preparing</option>
             <option value="ready">🟢 Ready</option>
-            <option value="served">🔵 Served</option>
           </select>
         </div>
       </Card>
 
-      {/* Main KDS Column Grid */}
+      {/* Main KDS 3-Column Grid */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
           <Spinner size="lg" />
@@ -214,6 +490,15 @@ const Kitchen = () => {
               <span className="kds-column-title pending">
                 🔴 NEW KOTs ({newKots.length})
               </span>
+              <button
+                type="button"
+                className="kds-focus-btn"
+                onClick={() => setFocusColumn('new')}
+                title="Focus View: NEW KOTs"
+              >
+                <Maximize2 size={14} />
+                <span>Focus View</span>
+              </button>
             </div>
 
             <div className="kds-card-list">
@@ -223,61 +508,11 @@ const Kitchen = () => {
                   <span>No new incoming KOTs</span>
                 </div>
               ) : (
-                newKots.map((kot) => {
-                  const { primaryText } = getOrderTimeMetrics(kot, currentTime);
-                  return (
-                    <div
-                      key={kot.id}
-                      className="kds-ticket-card pending"
-                      onClick={() => handleOpenDetails(kot.id)}
-                    >
-                      <div className="kds-ticket-header">
-                        <span className="kds-table-badge">
-                          🍽️ {kot.tableNo || 'Dine-In'}
-                        </span>
-                        <span className="kds-ticket-time">
-                          <Clock size={12} />
-                          {primaryText}
-                        </span>
-                      </div>
-
-                      <div className="kds-ticket-meta">
-                        <span style={{ fontWeight: '800', color: 'var(--color-primary)' }}>{kot.kotNumber}</span>
-                        <span>#{kot.orderNo} • Server: <strong>{kot.waiterName}</strong></span>
-                      </div>
-
-                      <div className="kds-ticket-items">
-                        {kot.items?.map((item, idx) => (
-                          <div key={idx} className="kds-item-row">
-                            <div className="kds-item-qty">{item.quantity}x</div>
-                            <span className="kds-item-name">{item.name}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {kot.notes && (
-                        <div className="kds-notes-box">
-                          <MessageSquare size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-                          <span>Note: {kot.notes}</span>
-                        </div>
-                      )}
-
-                      <div className="kds-ticket-footer">
-                        <button
-                          type="button"
-                          className="kds-action-btn start"
-                          onClick={(e) => handleUpdateStatus(kot.id, 'preparing', e)}
-                          disabled={updatingId === kot.id}
-                        >
-                          <Play size={16} fill="currentColor" />
-                          Start Preparing
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                paginatedNew.items.map((kot) => renderKotCard(kot, 'pending'))
               )}
             </div>
+
+            {renderPaginationFooter(paginatedNew, setPageNew)}
           </div>
 
           {/* COLUMN 2: PREPARING IN KITCHEN */}
@@ -286,6 +521,15 @@ const Kitchen = () => {
               <span className="kds-column-title preparing">
                 🟠 PREPARING IN KITCHEN ({preparingKots.length})
               </span>
+              <button
+                type="button"
+                className="kds-focus-btn"
+                onClick={() => setFocusColumn('preparing')}
+                title="Focus View: PREPARING IN KITCHEN"
+              >
+                <Maximize2 size={14} />
+                <span>Focus View</span>
+              </button>
             </div>
 
             <div className="kds-card-list">
@@ -295,61 +539,11 @@ const Kitchen = () => {
                   <span>No orders currently preparing</span>
                 </div>
               ) : (
-                preparingKots.map((kot) => {
-                  const { primaryText } = getOrderTimeMetrics(kot, currentTime);
-                  return (
-                    <div
-                      key={kot.id}
-                      className="kds-ticket-card preparing"
-                      onClick={() => handleOpenDetails(kot.id)}
-                    >
-                      <div className="kds-ticket-header">
-                        <span className="kds-table-badge" style={{ backgroundColor: '#FFF8E1', color: '#F57F17' }}>
-                          🍽️ {kot.tableNo || 'Dine-In'}
-                        </span>
-                        <span className="kds-ticket-time">
-                          <Clock size={12} />
-                          {primaryText}
-                        </span>
-                      </div>
-
-                      <div className="kds-ticket-meta">
-                        <span style={{ fontWeight: '800', color: '#E65100' }}>{kot.kotNumber}</span>
-                        <span>#{kot.orderNo} • Server: <strong>{kot.waiterName}</strong></span>
-                      </div>
-
-                      <div className="kds-ticket-items">
-                        {kot.items?.map((item, idx) => (
-                          <div key={idx} className="kds-item-row">
-                            <div className="kds-item-qty">{item.quantity}x</div>
-                            <span className="kds-item-name">{item.name}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {kot.notes && (
-                        <div className="kds-notes-box">
-                          <MessageSquare size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-                          <span>Note: {kot.notes}</span>
-                        </div>
-                      )}
-
-                      <div className="kds-ticket-footer">
-                        <button
-                          type="button"
-                          className="kds-action-btn ready"
-                          onClick={(e) => handleUpdateStatus(kot.id, 'ready', e)}
-                          disabled={updatingId === kot.id}
-                        >
-                          <CheckCircle2 size={16} />
-                          Mark Ready
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                paginatedPreparing.items.map((kot) => renderKotCard(kot, 'preparing'))
               )}
             </div>
+
+            {renderPaginationFooter(paginatedPreparing, setPagePreparing)}
           </div>
 
           {/* COLUMN 3: READY FOR SERVICE */}
@@ -358,6 +552,15 @@ const Kitchen = () => {
               <span className="kds-column-title ready">
                 🟢 READY FOR SERVICE ({readyKots.length})
               </span>
+              <button
+                type="button"
+                className="kds-focus-btn"
+                onClick={() => setFocusColumn('ready')}
+                title="Focus View: READY FOR SERVICE"
+              >
+                <Maximize2 size={14} />
+                <span>Focus View</span>
+              </button>
             </div>
 
             <div className="kds-card-list">
@@ -367,108 +570,47 @@ const Kitchen = () => {
                   <span>No orders ready for pickup</span>
                 </div>
               ) : (
-                readyKots.map((kot) => {
-                  return (
-                    <div
-                      key={kot.id}
-                      className="kds-ticket-card ready"
-                      onClick={() => handleOpenDetails(kot.id)}
-                    >
-                      <div className="kds-ticket-header">
-                        <span className="kds-table-badge" style={{ backgroundColor: '#E8F5E9', color: '#2E7D32' }}>
-                          🍽️ {kot.tableNo || 'Dine-In'}
-                        </span>
-                        <Badge variant="success">Ready for Waiter</Badge>
-                      </div>
-
-                      <div className="kds-ticket-meta">
-                        <span style={{ fontWeight: '800', color: '#2E7D32' }}>{kot.kotNumber}</span>
-                        <span>#{kot.orderNo} • Server: <strong>{kot.waiterName}</strong></span>
-                      </div>
-
-                      <div className="kds-ticket-items">
-                        {kot.items?.map((item, idx) => (
-                          <div key={idx} className="kds-item-row">
-                            <div className="kds-item-qty">{item.quantity}x</div>
-                            <span className="kds-item-name">{item.name}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {kot.notes && (
-                        <div className="kds-notes-box">
-                          <MessageSquare size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-                          <span>Note: {kot.notes}</span>
-                        </div>
-                      )}
-
-                      <div className="kds-ticket-footer">
-                        <button
-                          type="button"
-                          className="kds-action-btn served"
-                          onClick={(e) => handleUpdateStatus(kot.id, 'served', e)}
-                          disabled={updatingId === kot.id}
-                          style={{ backgroundColor: '#1E88E5', color: '#FFF' }}
-                        >
-                          <CheckCircle2 size={16} />
-                          Mark Served
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                paginatedReady.items.map((kot) => renderKotCard(kot, 'ready'))
               )}
             </div>
+
+            {renderPaginationFooter(paginatedReady, setPageReady)}
           </div>
 
-          {/* COLUMN 4: SERVED KOTs */}
-          <div className="kds-column">
-            <div className="kds-column-header">
-              <span className="kds-column-title" style={{ color: '#1E88E5' }}>
-                🔵 SERVED KOTs ({servedKots.length})
-              </span>
+        </div>
+      )}
+
+      {/* FOCUS VIEW OVERLAY MODAL (UNTOUCHED / PRESERVED) */}
+      {focusDetails && (
+        <div className="kds-focus-overlay" onClick={() => setFocusColumn(null)}>
+          <div className="kds-focus-container" onClick={(e) => e.stopPropagation()}>
+            <div className="kds-focus-header">
+              <div className="kds-focus-title-group">
+                <span className="kds-focus-pill" style={{ color: focusDetails.color }}>
+                  {focusDetails.title} ({focusDetails.count})
+                </span>
+                <span className="kds-focus-subtext">Full-screen KDS view • Oldest orders first</span>
+              </div>
+              <Button
+                variant="secondary"
+                icon={X}
+                onClick={() => setFocusColumn(null)}
+              >
+                Exit Focus View
+              </Button>
             </div>
 
-            <div className="kds-card-list">
-              {servedKots.length === 0 ? (
-                <div className="kds-empty-col">
-                  <Utensils size={32} />
-                  <span>No served KOTs</span>
+            <div className="kds-focus-grid">
+              {focusDetails.data.length === 0 ? (
+                <div className="kds-empty-col" style={{ gridColumn: '1 / -1', padding: '80px 0' }}>
+                  <ChefHat size={40} />
+                  <span>No orders found for this status</span>
                 </div>
               ) : (
-                servedKots.map((kot) => (
-                  <div
-                    key={kot.id}
-                    className="kds-ticket-card served"
-                    onClick={() => handleOpenDetails(kot.id)}
-                    style={{ borderLeft: '4px solid #1E88E5' }}
-                  >
-                    <div className="kds-ticket-header">
-                      <span className="kds-table-badge" style={{ backgroundColor: '#E3F2FD', color: '#1565C0' }}>
-                        🍽️ {kot.tableNo || 'Dine-In'}
-                      </span>
-                      <Badge variant="secondary">Served</Badge>
-                    </div>
-
-                    <div className="kds-ticket-meta">
-                      <span style={{ fontWeight: '800', color: '#1565C0' }}>{kot.kotNumber}</span>
-                      <span>#{kot.orderNo} • Server: <strong>{kot.waiterName}</strong></span>
-                    </div>
-
-                    <div className="kds-ticket-items">
-                      {kot.items?.map((item, idx) => (
-                        <div key={idx} className="kds-item-row">
-                          <div className="kds-item-qty">{item.quantity}x</div>
-                          <span className="kds-item-name">{item.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
+                focusDetails.data.map((kot) => renderKotCard(kot, focusDetails.type))
               )}
             </div>
           </div>
-
         </div>
       )}
 
@@ -617,3 +759,5 @@ const Kitchen = () => {
 };
 
 export default Kitchen;
+
+

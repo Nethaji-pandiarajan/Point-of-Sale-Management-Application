@@ -115,7 +115,9 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 620px;
 }
 
 .kds-column-header {
@@ -124,6 +126,7 @@
   justify-content: space-between;
   padding-bottom: 12px;
   border-bottom: 2px solid var(--color-border, #e8e8e8);
+  flex-shrink: 0;
 }
 
 .kds-column-title {
@@ -147,15 +150,96 @@
   color: #2E7D32;
 }
 
+.kds-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #475569);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kds-focus-btn:hover {
+  background-color: #F1F5F9;
+  color: var(--color-primary, #B71C1C);
+  border-color: var(--color-primary-light, #FFCDD2);
+}
+
 .kds-card-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
   padding-right: 2px;
+  flex: 1;
 }
 
-/* KDS Order Ticket Card */
+/* KDS Pagination Footer */
+.kds-pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #e8e8e8);
+  flex-shrink: 0;
+  background-color: #FAF9F9;
+}
+
+.kds-page-info {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-secondary, #64748B);
+}
+
+.kds-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kds-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background-color: #ffffff;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.kds-page-btn:hover:not(:disabled) {
+  background-color: var(--color-primary, #B71C1C);
+  color: #ffffff;
+  border-color: var(--color-primary, #B71C1C);
+}
+
+.kds-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kds-page-indicator {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1E293B;
+  padding: 2px 8px;
+  background-color: #E2E8F0;
+  border-radius: 6px;
+}
+
+/* KDS Order Ticket Card Structure */
 .kds-ticket-card {
   background-color: #ffffff;
   border-radius: 16px;
@@ -163,7 +247,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -184,13 +267,73 @@
   border-color: #A5D6A7;
 }
 
-.kds-ticket-header {
-  padding: 14px 16px;
-  background-color: #ffffff;
+/* Urgency Card Enhancements */
+.kds-ticket-card.urgency-warning {
+  border-color: #FFA726 !important;
+  background-color: #FFFAF0;
+}
+
+.kds-ticket-card.urgency-delayed {
+  border-color: #EF5350 !important;
+  box-shadow: 0 0 0 2px rgba(239, 83, 80, 0.25);
+  animation: pulseUrgent 2.5s infinite;
+}
+
+@keyframes pulseUrgent {
+  0% { box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 83, 80, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 83, 80, 0); }
+}
+
+.kds-urgency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.kds-urgency-pill.warning {
+  background-color: #FFF3E0;
+  color: #E65100;
+  border: 1px solid #FFE082;
+}
+
+.kds-urgency-pill.delayed {
+  background-color: #FFEBEE;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+
+.kds-ticket-time.time-delayed {
+  color: #C62828;
+  font-weight: 800;
+}
+
+/* ROW 1: Table Badge (left), Additional Badge (middle), Elapsed Time (right) */
+.kds-ticket-row-1 {
+  padding: 12px 14px 6px 14px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--color-border, #e8e8e8);
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border, #f1f5f9);
+}
+
+.kds-row-1-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.kds-row-1-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .kds-table-badge {
@@ -199,10 +342,33 @@
   gap: 6px;
   background-color: var(--color-primary-light, #FDF2F2);
   color: var(--color-primary, #B71C1C);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 8px;
+}
+
+.kds-table-badge.preparing {
+  background-color: #FFF8E1;
+  color: #F57F17;
+}
+
+.kds-table-badge.ready {
+  background-color: #E8F5E9;
+  color: #2E7D32;
+}
+
+.kds-additional-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #FFF3E0;
+  color: #E65100;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #FFE082;
+  text-transform: uppercase;
 }
 
 .kds-ticket-time {
@@ -214,37 +380,58 @@
   color: var(--color-text-secondary, #666666);
 }
 
-.kds-ticket-meta {
-  padding: 10px 16px;
-  background-color: #FAF9F9;
+/* ROW 2: KOT Number & Order Number */
+.kds-ticket-row-2 {
+  padding: 8px 14px 2px 14px;
   display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: var(--color-text-secondary, #666666);
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.kds-kot-num {
+  font-weight: 800;
+  color: var(--color-primary, #B71C1C);
+}
+
+.kds-order-bullet {
+  color: #CBD5E1;
+}
+
+.kds-order-num {
+  font-weight: 700;
+  color: #475569;
+}
+
+/* ROW 3: Server / Waiter Name */
+.kds-ticket-row-3 {
+  padding: 2px 14px 8px 14px;
+  font-size: 0.78rem;
+  color: #64748B;
   border-bottom: 1px dashed var(--color-border, #e8e8e8);
 }
 
 .kds-ticket-items {
-  padding: 14px 16px;
+  padding: 8px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   flex-grow: 1;
 }
 
 .kds-item-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .kds-item-qty {
   background-color: var(--color-text-primary, #1f1f1f);
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -265,19 +452,41 @@
 }
 
 .kds-item-name {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--color-text-primary, #1f1f1f);
   line-height: 1.3;
 }
 
+/* Item List Toggle Button */
+.kds-items-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #2563EB;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 2px 0;
+  cursor: pointer;
+  margin-top: 2px;
+  align-self: flex-start;
+  transition: color 0.15s ease;
+}
+
+.kds-items-toggle-btn:hover {
+  color: #1D4ED8;
+  text-decoration: underline;
+}
+
 .kds-notes-box {
-  margin: 4px 16px 14px 16px;
-  padding: 10px 12px;
+  margin: 4px 14px 10px 14px;
+  padding: 8px 10px;
   background-color: #FFF8E1;
   border: 1px solid #FFE082;
   border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #F57F17;
   display: flex;
@@ -286,7 +495,7 @@
 }
 
 .kds-ticket-footer {
-  padding: 12px 16px;
+  padding: 10px 14px;
   background-color: #ffffff;
   border-top: 1px solid var(--color-border, #e8e8e8);
   display: flex;
@@ -295,10 +504,10 @@
 
 .kds-action-btn {
   width: 100%;
-  height: 42px;
+  height: 40px;
   border-radius: 10px;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -335,6 +544,29 @@
   background-color: #1B5E20;
 }
 
+.kds-action-btn.served {
+  background-color: #1E88E5;
+  color: #ffffff;
+}
+
+.kds-action-btn.served:hover {
+  background-color: #1565C0;
+}
+
+.kds-served-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #1565C0;
+  background-color: #E3F2FD;
+  border-radius: 8px;
+}
+
 /* Empty column state */
 .kds-empty-col {
   display: flex;
@@ -352,9 +584,75 @@
   font-weight: 600;
 }
 
+/* Focus View Overlay */
+.kds-focus-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.kds-focus-container {
+  background-color: #F8FAFC;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 1400px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #E2E8F0;
+}
+
+.kds-focus-header {
+  padding: 16px 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kds-focus-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kds-focus-pill {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.kds-focus-subtext {
+  font-size: 0.8rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.kds-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
 /* Responsive KDS Board */
 @media (max-width: 1024px) {
   .kds-board-grid {
     grid-template-columns: 1fr;
   }
 }
+
+
