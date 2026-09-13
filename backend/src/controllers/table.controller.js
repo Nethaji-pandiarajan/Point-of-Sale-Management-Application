@@ -38,10 +38,11 @@ const getTables = async (req, res, next) => {
              ao.order_number AS "activeOrderNo",
              ao.status AS "activeOrderStatus",
              ao.total_amount AS "activeOrderTotal",
+             ao.guest_count AS "activeOrderGuests",
              u.name AS "assignedWaiter"
       FROM tables t
       LEFT JOIN LATERAL (
-        SELECT o.id, o.order_number, o.status, o.total_amount, o.user_id
+        SELECT o.id, o.order_number, o.status, o.total_amount, o.user_id, o.guest_count
         FROM orders o
         WHERE (o.table_id = t.id OR LOWER(o.table_number) = LOWER(t.table_number) OR LOWER(o.table_number) = LOWER(t.table_code))
           AND o.status IN ('pending', 'preparing', 'ready', 'served')

@@ -14,6 +14,7 @@ const getOrders = async (req, res, next) => {
 
     let queryText = `
       SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
+             o.guest_count AS "guestCount",
              o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
              u.name AS "customerName", u.email, u.phone,
              COALESCE(
@@ -125,6 +126,7 @@ const getOrders = async (req, res, next) => {
       email: row.email || '',
       phone: row.phone || '',
       tableNo: row.tableNo || '',
+      guestCount: parseInt(row.guestCount, 10) || 1,
       notes: row.notes || '',
       items: row.items,
       subtotal: parseFloat(row.subtotal || row.totalAmount),
@@ -160,6 +162,7 @@ const getOrderById = async (req, res, next) => {
 
     const queryText = `
       SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
+             o.guest_count AS "guestCount",
              o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
              u.name AS "customerName", u.email, u.phone,
              COALESCE(
@@ -190,6 +193,7 @@ const getOrderById = async (req, res, next) => {
       email: order.email || '',
       phone: order.phone || '',
       tableNo: order.tableNo || '',
+      guestCount: parseInt(order.guestCount, 10) || 1,
       notes: order.notes || '',
       items: order.items,
       subtotal: parseFloat(order.subtotal || order.totalAmount),
@@ -214,7 +218,7 @@ const createOrder = async (req, res, next) => {
   try {
     await client.query('BEGIN');
 
-    const { items, orderType, tableNo, notes } = req.body;
+    const { items, orderType, tableNo, notes, guestCount } = req.body;
     const userId = req.user.id; // user set by protect middleware
 
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -285,28 +289,41 @@ const createOrder = async (req, res, next) => {
       { status: 'pending', time: new Date().toISOString(), note: `Order placed by customer ${user.name}` }
     ];
 
-    // 5. Link table_id and mark table as occupied if tableNo is provided
+    // 5. Link table_id, validate table capacity against guestCount, and mark occupied
     let matchedTableId = null;
+    let tableCapacity = null;
     if (tableNo && tableNo.trim()) {
       const tableCheck = await client.query(
-        "SELECT id FROM tables WHERE LOWER(table_number) = LOWER($1)",
+        "SELECT id, capacity FROM tables WHERE LOWER(table_number) = LOWER($1) OR LOWER(table_code) = LOWER($1)",
         [tableNo.trim()]
       );
       if (tableCheck.rowCount > 0) {
         matchedTableId = tableCheck.rows[0].id;
-        await client.query(
-          "UPDATE tables SET status = 'occupied' WHERE id = $1 AND status != 'reserved'",
-          [matchedTableId]
-        );
+        tableCapacity = tableCheck.rows[0].capacity;
       }
+    }
+
+    const gCount = parseInt(guestCount !== undefined ? guestCount : 1, 10);
+    if (isNaN(gCount) || gCount < 1) {
+      throw new Error('Guest count must be at least 1');
+    }
+    if (tableCapacity && gCount > tableCapacity) {
+      throw new Error(`Guest count (${gCount}) exceeds table capacity (${tableCapacity} seats)`);
+    }
+
+    if (matchedTableId) {
+      await client.query(
+        "UPDATE tables SET status = 'occupied' WHERE id = $1 AND status != 'reserved'",
+        [matchedTableId]
+      );
     }
 
     // Insert order
     const orderInsertRes = await client.query(`
-      INSERT INTO orders (user_id, order_number, order_type, table_number, table_id, status, subtotal, total_amount, notes, timeline)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO orders (user_id, order_number, order_type, table_number, table_id, status, subtotal, total_amount, notes, timeline, guest_count)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING id
-    `, [userId, orderNumber, orderType || 'dine_in', tableNo || '', matchedTableId, 'pending', subtotal, totalAmount, notes || '', JSON.stringify(timeline)]);
+    `, [userId, orderNumber, orderType || 'dine_in', tableNo || '', matchedTableId, 'pending', subtotal, totalAmount, notes || '', JSON.stringify(timeline), gCount]);
 
     const orderId = orderInsertRes.rows[0].id;
 
@@ -363,6 +380,7 @@ const createOrder = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         tableNo: tableNo || '',
+        guestCount: gCount,
         tableId: matchedTableId,
         notes: notes || '',
         items: validatedItems.map(vi => ({ name: vi.productName, quantity: vi.quantity, price: vi.unitPrice })),
