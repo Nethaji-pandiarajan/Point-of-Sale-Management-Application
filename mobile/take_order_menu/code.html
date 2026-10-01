@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;font-family:'Inter',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#0051d5", "on-surface": "#1c1b1b", "on-secondary-container": "#fefcff", "tertiary-fixed-dim": "#66de79", "tertiary-container": "#00782d", "on-primary": "#ffffff", "outline": "#906f6c", "on-secondary-fixed-variant": "#003ea8", "inverse-surface": "#313030", "on-primary-fixed": "#410003", "on-error-container": "#93000a", "surface-container-high": "#eae7e7", "surface-variant": "#e5e2e1", "inverse-primary": "#ffb3ac", "surface": "#fcf9f8", "primary-fixed": "#ffdad6", "error-container": "#ffdad6", "tertiary": "#005d21", "surface-container-highest": "#e5e2e1", "error": "#ba1a1a", "tertiary-fixed": "#82fc92", "surface-container": "#f0eded", "surface-dim": "#dcd9d9", "primary-container": "#c91f24", "primary-fixed-dim": "#ffb3ac", "secondary-fixed": "#dbe1ff", "surface-bright": "#fcf9f8", "on-primary-container": "#ffdfdc", "primary": "#a30012", "on-secondary-fixed": "#00174b", "surface-container-lowest": "#ffffff", "outline-variant": "#e5bdb9", "background": "#fcf9f8", "on-background": "#1c1b1b", "surface-container-low": "#f6f3f2", "on-tertiary": "#ffffff", "surface-tint": "#bc131d", "secondary-fixed-dim": "#b4c5ff", "on-tertiary-fixed-variant": "#00531d", "on-surface-variant": "#5c403d", "on-error": "#ffffff", "on-secondary": "#ffffff", "on-tertiary-fixed": "#002107", "on-primary-fixed-variant": "#93000f", "on-tertiary-container": "#8fff9b", "secondary-container": "#316bf3", "inverse-on-surface": "#f3f0ef" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "action-bar-height": "4.5rem", "space-2xs": "0.25rem", "screen-margin-mobile": "1rem", "bottom-nav-height": "4.25rem", "touch-min": "3rem", "space-sm": "0.75rem", "space-lg": "1.25rem", "space-2xl": "2rem", "space-md": "1rem", "space-xl": "1.5rem", "space-xs": "0.5rem" }, "fontFamily": { "body-lg": ["inter"], "display-table-num": ["inter"], "headline-lg": ["inter"], "caption-sm": ["inter"], "label-badge": ["inter"], "title-sm": ["inter"], "headline-md": ["inter"], "label-numeric": ["inter"], "body-md": ["inter"], "body-md-bold": ["inter"] }, "fontSize": { "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}], "display-table-num": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800"}], "headline-lg": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "700"}], "caption-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500"}], "label-badge": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "700"}], "title-sm": ["16px", {"lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "600"}], "headline-md": ["20px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "label-numeric": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "700"}], "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}], "body-md-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "600"}] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go Back" class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high/60 transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_back_ios_new</span></button><img alt="Saleiz Waiter Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VgX3M62MnvAGeYQpNz8BIlExR6tiyklLWTsnG5EZkf_fCJabZ7Yxt_O_7Uz-HewcYTbL68Dyt3rERorpj1nmx3UWKqWiPSRwNO32zTf6ZXTOIRDv1SrR1ItcvpKkxXF4v-zBOUrIO3CcjfGe4wTTZzZ1tnMYYbaOBstu2dxQJ4QY_lHUCeACbPkF7COeR4dwyljjhwa08gXZLTPP2WCsED6biW1uTrba7TsPS3RlkJPZFIHUbWFmW5IQ"/><h1 class="font-title-sm text-title-sm text-on-surface ml-1">Order Entry</h1></div><div class="flex items-center pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(0,0,0,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV2CzM5qJa_0-_xZFpGHP9Peg-Ws2MaFDIttbEpIvvZoO-YUWVav_p1xdacDo1YYrg0U8l0uOFGQaWLy4DCjAd1PjSC0T65Z9Su7QZw_Ds2g6zo4pdywjwiFFWfjxKf1Dj5uD_bXbBlcfUitu-Rpiza3gQLCYBMf-6wLnGruiVr4zs9SONxSl2bwyUAWqivTjoZtjrxtgXUbk77Q3Ho3dpr3cJXDhwLvfaeqFd-geTHb6tI6gcgxc"/></div></div></header><div class="fixed top-16 inset-x-0 z-40 flex flex-col items-center pointer-events-none px-space-md" id="system-alerts"><div class="hidden w-full max-w-sm mx-auto mt-space-2xs py-1.5 px-space-md bg-inverse-surface text-inverse-on-surface rounded-lg shadow-md flex items-center justify-center gap-space-xs pointer-events-auto" id="offline-indicator"><span class="material-symbols-outlined text-[18px] text-error-container">cloud_off</span><span class="font-caption-sm text-caption-sm font-medium">Offline Mode - Orders syncing locally</span></div><div class="w-full max-w-sm mx-auto pointer-events-auto" id="toast-slot"></div></div><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface px-screen-margin-mobile"><div class="flex flex-col w-full pb-32">
+<section class="flex flex-col gap-space-xs mt-space-xs">
+<div class="flex items-center justify-between bg-surface-container-low p-space-sm rounded-xl shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">restaurant_menu</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-2xs">
+<span class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Table 3</span>
+<span class="font-caption-sm text-caption-sm bg-surface-container-high text-on-surface-variant px-space-xs py-0.5 rounded-full font-bold">TAB03</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant truncate">New Dine-In Order • 3 Guests</span>
+</div>
+</div>
+<div class="flex items-center gap-space-2xs shrink-0">
+<span class="font-caption-sm text-caption-sm bg-tertiary-fixed text-on-tertiary-fixed font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Active
+        </span>
+</div>
+</div>
+<div class="relative w-full mt-space-2xs">
+<div class="absolute inset-y-0 left-0 pl-space-md flex items-center pointer-events-none text-on-surface-variant">
+<span class="material-symbols-outlined text-[22px]">search</span>
+</div>
+<input class="w-full h-touch-min pl-12 pr-10 rounded-xl bg-surface-container-lowest shadow-sm text-on-surface font-body-md text-body-md placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest" id="menu-search" placeholder="Search dishes, drinks, codes..." type="text"/>
+<button aria-label="Scan barcode or code" class="absolute inset-y-0 right-0 pr-space-md flex items-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">qr_code_scanner</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs overflow-x-auto py-space-2xs no-scrollbar -mx-screen-margin-mobile px-screen-margin-mobile mt-space-2xs">
+<button class="shrink-0 h-10 px-4 rounded-full bg-primary-container text-on-primary font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>All</span>
+<span class="bg-on-primary/20 px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">38</span>
+</button>
+<button class="shrink-0 h-10 px-4 rounded-full bg-surface-container-lowest text-on-surface font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>Starters</span>
+<span class="bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">8</span>
+</button>
+<button class="shrink-0 h-10 px-4 rounded-full bg-surface-container-lowest text-on-surface font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>Main Course</span>
+<span class="bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">14</span>
+</button>
+<button class="shrink-0 h-10 px-4 rounded-full bg-surface-container-lowest text-on-surface font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>Pizza</span>
+<span class="bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">6</span>
+</button>
+<button class="shrink-0 h-10 px-4 rounded-full bg-surface-container-lowest text-on-surface font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>Beverages</span>
+<span class="bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">7</span>
+</button>
+<button class="shrink-0 h-10 px-4 rounded-full bg-surface-container-lowest text-on-surface font-label-badge text-label-badge shadow-sm flex items-center gap-1.5 transition-transform active:scale-95">
+<span>Desserts</span>
+<span class="bg-surface-container-high text-on-surface-variant px-1.5 py-0.5 rounded-full text-caption-sm font-caption-sm">3</span>
+</button>
+</div>
+</section>
+<div class="w-full mt-space-sm transition-all duration-300 transform opacity-100 translate-y-0" id="live-toast">
+<div class="bg-inverse-surface text-inverse-on-surface px-space-md py-2.5 rounded-xl shadow-md flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<span class="material-symbols-outlined text-[18px] text-tertiary-fixed shrink-0">check_circle</span>
+<span class="font-body-md text-body-md truncate">2× Lemon Mint Iced Cooler added</span>
+</div>
+<button class="text-inverse-on-surface/70 hover:text-inverse-on-surface p-1" onclick="document.getElementById('live-toast').classList.add('hidden')">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<section class="flex flex-col gap-space-sm mt-space-sm" id="food-items-container">
+<article class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex gap-space-sm relative overflow-hidden transition-all active:shadow-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A gourmet artisanal Margherita pizza with a blistered crisp sourdough crust, rich red San Marzano tomato sauce, melted creamy buffalo mozzarella pockets, fresh vibrant green basil leaves, and a glossy drizzle of extra virgin olive oil, captured under warm restaurant culinary lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6z5VItZ88VMAnANNvzZo8RXGk5-Scpc-KiewwfcKB6eTa0TKwsEBBOVYijWUHmOPIanLWLHOtHfLz4bnHghplxJrO1CLg_nn7h3t_HI_iP47F4oLMembe5rMGGN_IHRo-RXGVcqb_wk84m1oLseVmsaRa_-IjS_OeRH35F3VFNUEzBljLIUIDapFoKO6IwP-4tpo3wFGTBxc4-NUxROTGNyFunDORHTGYZkyKFxtISnyaynOoJ9c"/>
+<span class="absolute bottom-1 left-1 bg-surface-container-lowest/90 backdrop-blur-xs text-tertiary font-caption-sm text-caption-sm px-1.5 py-0.5 rounded font-bold">Veg</span>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<div class="flex items-start justify-between gap-space-2xs">
+<h2 class="font-title-sm text-title-sm text-on-surface font-semibold leading-tight truncate">Margherita Pizza</h2>
+<span class="font-label-numeric text-label-numeric text-on-surface shrink-0">₹250</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant line-clamp-2 mt-0.5">Crisp sourdough, San Marzano tomato, buffalo mozzarella, fresh basil</p>
+</div>
+<div class="flex items-center justify-between mt-space-xs">
+<span class="font-caption-sm text-caption-sm text-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span> In Stock
+          </span>
+<div class="flex items-center bg-primary-container text-on-primary rounded-xl h-10 px-1 shadow-sm">
+<button aria-label="Decrease quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="font-label-numeric text-label-numeric font-bold px-2.5 min-w-[28px] text-center">2</span>
+<button aria-label="Increase quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex gap-space-sm relative overflow-hidden transition-all active:shadow-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A crisp Classic Caesar Salad in a dark matte bowl with fresh chilled romaine lettuce, golden seasoned herb croutons, shaved aged parmesan cheese ribbons, cracked black peppercorn, and creamy emulsified garlic dressing, shot in professional top-down dining aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD42FOCU_oyVE5pRR2K9366B9x89pdDu8gS0AvyLlkYvTUO5TXyvvMtM2s8fBDAchZeLwDy0ogPl3khFY-BJxX9kT1uuADrV2F5Y1d7OgGwj45oV5YNLoKjQ8Lbxso-FMWnzZ_b3mO9SVEAzXe92CSwhXJAdh6zpI1xBNmrZyGkZ3djglsThsCF4KTHqB-mHwXFyir84hhG2Qav-sF4TgMCDObDlzieP__5sD5nV1fgHZi-0bVbuv0"/>
+<span class="absolute bottom-1 left-1 bg-surface-container-lowest/90 backdrop-blur-xs text-tertiary font-caption-sm text-caption-sm px-1.5 py-0.5 rounded font-bold">Veg</span>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<div class="flex items-start justify-between gap-space-2xs">
+<h2 class="font-title-sm text-title-sm text-on-surface font-semibold leading-tight truncate">Classic Caesar Salad</h2>
+<span class="font-label-numeric text-label-numeric text-on-surface shrink-0">₹180</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant line-clamp-2 mt-0.5">Romaine, herb croutons, aged parmesan, creamy garlic dressing</p>
+</div>
+<div class="flex items-center justify-between mt-space-xs">
+<span class="font-caption-sm text-caption-sm text-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span> In Stock
+          </span>
+<div class="flex items-center bg-primary-container text-on-primary rounded-xl h-10 px-1 shadow-sm">
+<button aria-label="Decrease quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="font-label-numeric text-label-numeric font-bold px-2.5 min-w-[28px] text-center">1</span>
+<button aria-label="Increase quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex gap-space-sm relative overflow-hidden transition-all active:shadow-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Succulent grilled chicken breast basted with fresh rosemary butter, served alongside tender charred green asparagus spears, dark aromatic black truffle jus pooling elegantly on an off-white ceramic bistro plate, softly illuminated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu1Kw1touC9hVie22WWomNSwEjmG27aKip0GGIZov_cPxPK9uqmhM3hRnJ5YGOc8746EQtuUlooBTb91UClJu7KLSjIeoTsP6kcCY5nEp-8jJPNMGIr2EtG52LI5yRmJ1bOh6voUDlkbfgjXRVpkwz9t7wVq6zhdpPCRV8NfJ-L4DzKhItZ00HuC93WHFYHriGJ-PhoOfY_HGMio2gyBOtedBoBATPgUNMcQwanw4HPk7EZ5LQa-M"/>
+<span class="absolute bottom-1 left-1 bg-surface-container-lowest/90 backdrop-blur-xs text-primary font-caption-sm text-caption-sm px-1.5 py-0.5 rounded font-bold">Non-Veg</span>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<div class="flex items-start justify-between gap-space-2xs">
+<h2 class="font-title-sm text-title-sm text-on-surface font-semibold leading-tight truncate">Grilled Truffle Chicken</h2>
+<span class="font-label-numeric text-label-numeric text-on-surface shrink-0">₹380</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant line-clamp-2 mt-0.5">Rosemary-basted chicken breast, truffle jus, charred asparagus</p>
+</div>
+<div class="flex items-center justify-between mt-space-xs">
+<span class="font-caption-sm text-caption-sm text-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span> In Stock
+          </span>
+<button class="h-touch-min min-w-[96px] px-4 rounded-xl bg-surface-container-high hover:bg-primary-container text-on-surface hover:text-on-primary font-label-numeric text-label-numeric flex items-center justify-center gap-1 transition-all active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add</span>
+</button>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex gap-space-sm relative overflow-hidden transition-all active:shadow-md">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A tall condensation-beaded highball glass containing a refreshing Lemon Mint Iced Cooler filled with crushed ice cubes, muddled vibrant fresh garden mint leaves, bright yellow lemon slices, effervescent sparkling soda bubbles rising smoothly, bright and thirst-quenching presentation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5hOWH4UCOQHusxECCimQamZjNYk8Gba9iPhvkfG8zaglxMYBZIoREdoJf-iXtcaqdYJFB5juqrFkRJdL33cc5iSazMk2dgXuXN7_4xw-0kc5duv4YlOfy95ap2T0uAjazogtkN45xJ59Dn1OhF0sqliSzpp72UzHnFBg8r3awG6KU9sKxeQHoUdx2cmcWefy-9BldlW87vfOVvbU_ARYlAyP4K8RDLUWwZx1iCagXihSYNOid_Yc"/>
+<span class="absolute bottom-1 left-1 bg-surface-container-lowest/90 backdrop-blur-xs text-secondary font-caption-sm text-caption-sm px-1.5 py-0.5 rounded font-bold">Drink</span>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<div class="flex items-start justify-between gap-space-2xs">
+<h2 class="font-title-sm text-title-sm text-on-surface font-semibold leading-tight truncate">Lemon Mint Iced Cooler</h2>
+<span class="font-label-numeric text-label-numeric text-on-surface shrink-0">₹120</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant line-clamp-2 mt-0.5">Fresh mint, squeezed lemon, sparkling soda</p>
+</div>
+<div class="flex items-center justify-between mt-space-xs">
+<span class="font-caption-sm text-caption-sm text-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span> In Stock
+          </span>
+<div class="flex items-center bg-primary-container text-on-primary rounded-xl h-10 px-1 shadow-sm">
+<button aria-label="Decrease quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="font-label-numeric text-label-numeric font-bold px-2.5 min-w-[28px] text-center">2</span>
+<button aria-label="Increase quantity" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-black/10 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</article>
+<article class="bg-surface-container p-space-sm rounded-xl shadow-sm flex gap-space-sm relative overflow-hidden opacity-60 cursor-not-allowed">
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative bg-surface-dim grayscale">
+<img class="w-full h-full object-cover" data-alt="Artisan handmade lobster ravioli parcels draped with silky saffron butter emulsion sauce, garnished with micro herbs and edible gold fleck accents, fine dining gourmet preparation." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkF68emDL8GWQhKjWZQiOQBUSn9qr1FmdLfD3CTk2xO2UMOk2cx4GOj29XvyGeTwsYq97mkluVkI45YoWh6cqqCNDSMw7KCoF9f5XjgZ724SQIkAhRzdRqxJ9IlgaT7ZAFwGj80d1wNdgIZQt65uRnrDQca0Mh9FhD4gqXFysk_ZRpaVPwqJ8ROHE9sigaHjdtZWq78hLHnUYlhvbc1sNlu3-UkRS_dbnnLUDhyGj7GOjmrASvnxk"/>
+<div class="absolute inset-0 bg-on-surface/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-surface text-[22px]">block</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 min-w-0">
+<div>
+<div class="flex items-start justify-between gap-space-2xs">
+<h2 class="font-title-sm text-title-sm text-on-surface-variant font-semibold leading-tight truncate">Chef's Special Lobster Ravioli</h2>
+<span class="font-label-numeric text-label-numeric text-on-surface-variant shrink-0 line-through">₹520</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant line-clamp-1 mt-0.5">Saffron butter sauce</p>
+</div>
+<div class="flex items-center justify-between mt-space-xs">
+<span class="font-caption-sm text-caption-sm bg-surface-container-highest text-on-surface-variant px-2 py-0.5 rounded font-bold flex items-center gap-1">
+            Out of stock in kitchen
+          </span>
+<button class="h-touch-min min-w-[96px] px-4 rounded-xl bg-surface-container-high text-on-surface-variant/40 font-label-numeric text-label-numeric flex items-center justify-center gap-1 cursor-not-allowed" disabled="" title="Out of stock in kitchen">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add</span>
+</button>
+</div>
+</div>
+</article>
+</section>
+<aside class="fixed bottom-3 inset-x-screen-margin-mobile z-30 max-w-lg mx-auto">
+<div class="bg-primary-container text-on-primary rounded-2xl shadow-xl p-space-sm flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm pl-1 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-on-primary/15 flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-badge text-label-badge text-on-primary/80 uppercase tracking-wider">Current Table Tab</span>
+<div class="flex items-center gap-space-2xs">
+<span class="font-title-sm text-title-sm font-bold text-on-primary">5 Items</span>
+<span class="text-on-primary/60 font-body-md text-body-md">•</span>
+<span class="font-headline-md text-headline-md font-extrabold text-on-primary">₹920</span>
+</div>
+</div>
+</div>
+<button class="h-touch-min px-5 rounded-xl bg-surface-container-lowest text-primary-container font-title-sm text-title-sm font-bold shadow-md flex items-center gap-1.5 hover:bg-surface-bright active:scale-95 transition-all shrink-0">
+<span>View Order</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+<script>
+  setTimeout(() => {
+    const toast = document.getElementById('live-toast');
+    if (toast) {
+      toast.classList.add('opacity-0', '-translate-y-2');
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, 4000);
+</script></main></body></html>

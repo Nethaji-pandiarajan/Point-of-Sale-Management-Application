@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Saleiz Waiter",
+    "slug": "saleiz-waiter",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.saleiz.waiter",
+      "adaptiveIcon": {
+        "backgroundColor": "#FCF9F8"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-status-bar",
+      "expo-audio",
+      "./plugins/withCleartextTraffic"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0dadaae5-3e60-426b-93a5-f7575e39cd86"
+      }
+    }
+  }
+}

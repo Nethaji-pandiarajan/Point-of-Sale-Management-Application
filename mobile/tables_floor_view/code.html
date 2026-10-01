@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;font-family:'Inter',sans-serif;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary": "#0051d5", "on-surface": "#1c1b1b", "on-secondary-container": "#fefcff", "tertiary-fixed-dim": "#66de79", "tertiary-container": "#00782d", "on-primary": "#ffffff", "outline": "#906f6c", "on-secondary-fixed-variant": "#003ea8", "inverse-surface": "#313030", "on-primary-fixed": "#410003", "on-error-container": "#93000a", "surface-container-high": "#eae7e7", "surface-variant": "#e5e2e1", "inverse-primary": "#ffb3ac", "surface": "#fcf9f8", "primary-fixed": "#ffdad6", "error-container": "#ffdad6", "tertiary": "#005d21", "surface-container-highest": "#e5e2e1", "error": "#ba1a1a", "tertiary-fixed": "#82fc92", "surface-container": "#f0eded", "surface-dim": "#dcd9d9", "primary-container": "#c91f24", "primary-fixed-dim": "#ffb3ac", "secondary-fixed": "#dbe1ff", "surface-bright": "#fcf9f8", "on-primary-container": "#ffdfdc", "primary": "#a30012", "on-secondary-fixed": "#00174b", "surface-container-lowest": "#ffffff", "outline-variant": "#e5bdb9", "background": "#fcf9f8", "on-background": "#1c1b1b", "surface-container-low": "#f6f3f2", "on-tertiary": "#ffffff", "surface-tint": "#bc131d", "secondary-fixed-dim": "#b4c5ff", "on-tertiary-fixed-variant": "#00531d", "on-surface-variant": "#5c403d", "on-error": "#ffffff", "on-secondary": "#ffffff", "on-tertiary-fixed": "#002107", "on-primary-fixed-variant": "#93000f", "on-tertiary-container": "#8fff9b", "secondary-container": "#316bf3", "inverse-on-surface": "#f3f0ef" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "action-bar-height": "4.5rem", "space-2xs": "0.25rem", "screen-margin-mobile": "1rem", "bottom-nav-height": "4.25rem", "touch-min": "3rem", "space-sm": "0.75rem", "space-lg": "1.25rem", "space-2xl": "2rem", "space-md": "1rem", "space-xl": "1.5rem", "space-xs": "0.5rem" }, "fontFamily": { "body-lg": ["inter"], "display-table-num": ["inter"], "headline-lg": ["inter"], "caption-sm": ["inter"], "label-badge": ["inter"], "title-sm": ["inter"], "headline-md": ["inter"], "label-numeric": ["inter"], "body-md": ["inter"], "body-md-bold": ["inter"] }, "fontSize": { "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}], "display-table-num": ["32px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800"}], "headline-lg": ["24px", {"lineHeight": "30px", "letterSpacing": "-0.015em", "fontWeight": "700"}], "caption-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.01em", "fontWeight": "500"}], "label-badge": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "700"}], "title-sm": ["16px", {"lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "600"}], "headline-md": ["20px", {"lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "label-numeric": ["15px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "700"}], "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}], "body-md-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "600"}] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="Saleiz Waiter Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1VgX3M62MnvAGeYQpNz8BIlExR6tiyklLWTsnG5EZkf_fCJabZ7Yxt_O_7Uz-HewcYTbL68Dyt3rERorpj1nmx3UWKqWiPSRwNO32zTf6ZXTOIRDv1SrR1ItcvpKkxXF4v-zBOUrIO3CcjfGe4wTTZzZ1tnMYYbaOBstu2dxQJ4QY_lHUCeACbPkF7COeR4dwyljjhwa08gXZLTPP2WCsED6biW1uTrba7TsPS3RlkJPZFIHUbWFmW5IQ"/><div class="flex flex-col"><span class="font-title-sm text-title-sm text-on-surface leading-tight">Saleiz Waiter</span><div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span class="font-caption-sm text-caption-sm text-on-surface-variant font-medium">Floor A • Shift Active</span></div></div></div><div class="flex items-center gap-space-xs"><button aria-label="Notifications" class="relative w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container-high/60 transition-colors"><span class="material-symbols-outlined text-[24px]">notifications</span><span class="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center bg-primary-container text-on-primary font-caption-sm text-[10px] font-bold rounded-full">3</span></button><div class="flex items-center pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(0,0,0,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV2CzM5qJa_0-_xZFpGHP9Peg-Ws2MaFDIttbEpIvvZoO-YUWVav_p1xdacDo1YYrg0U8l0uOFGQaWLy4DCjAd1PjSC0T65Z9Su7QZw_Ds2g6zo4pdywjwiFFWfjxKf1Dj5uD_bXbBlcfUitu-Rpiza3gQLCYBMf-6wLnGruiVr4zs9SONxSl2bwyUAWqivTjoZtjrxtgXUbk77Q3Ho3dpr3cJXDhwLvfaeqFd-geTHb6tI6gcgxc"/></div></div></div></header><div class="fixed top-16 inset-x-0 z-40 flex flex-col items-center pointer-events-none px-space-md" id="system-alerts"><div class="hidden w-full max-w-sm mx-auto mt-space-2xs py-1.5 px-space-md bg-inverse-surface text-inverse-on-surface rounded-lg shadow-md flex items-center justify-center gap-space-xs pointer-events-auto" id="offline-indicator"><span class="material-symbols-outlined text-[18px] text-error-container">cloud_off</span><span class="font-caption-sm text-caption-sm font-medium">Offline Mode - Orders syncing locally</span></div><div class="w-full max-w-sm mx-auto pointer-events-auto" id="toast-slot"></div></div><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-screen-margin-mobile"><div class="flex flex-col w-full gap-space-md">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Tables</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Select a table to start or manage an order</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shadow-sm active:scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined text-[22px]">swap_horiz</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] pointer-events-none">search</span>
+<input class="w-full h-12 pl-11 pr-10 rounded-xl bg-surface-container text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-high transition-colors shadow-sm" id="tableSearchInput" placeholder="Search table (e.g. TAB01)..." type="text"/>
+<button aria-label="Clear search" class="absolute right-space-xs top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant opacity-0 pointer-events-none transition-opacity hover:bg-surface-variant" id="clearSearchBtn">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="flex items-center gap-space-xs overflow-x-auto pb-1 -mx-screen-margin-mobile px-screen-margin-mobile scrollbar-none">
+<button class="filter-pill shrink-0 px-space-md py-2 rounded-full font-label-badge text-label-badge bg-primary-container text-on-primary shadow-sm flex items-center gap-1.5 active:scale-95 transition-all" data-filter="all">
+<span>All</span>
+<span class="bg-surface/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">12</span>
+</button>
+<button class="filter-pill shrink-0 px-space-md py-2 rounded-full font-label-badge text-label-badge bg-surface-container text-on-surface shadow-sm flex items-center gap-1.5 active:scale-95 transition-all hover:bg-surface-container-high" data-filter="available">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+<span>Available</span>
+<span class="text-on-surface-variant text-[10px]">5</span>
+</button>
+<button class="filter-pill shrink-0 px-space-md py-2 rounded-full font-label-badge text-label-badge bg-surface-container text-on-surface shadow-sm flex items-center gap-1.5 active:scale-95 transition-all hover:bg-surface-container-high" data-filter="occupied">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span>Occupied</span>
+<span class="text-on-surface-variant text-[10px]">5</span>
+</button>
+<button class="filter-pill shrink-0 px-space-md py-2 rounded-full font-label-badge text-label-badge bg-surface-container text-on-surface shadow-sm flex items-center gap-1.5 active:scale-95 transition-all hover:bg-surface-container-high" data-filter="reserved">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span>Reserved</span>
+<span class="text-on-surface-variant text-[10px]">2</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-sm w-full" id="tablesGrid">
+<!-- Table 1: AVAILABLE -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB01" data-status="available" data-table="Table 1" onclick="openTableSheet('Table 1', 'TAB01', 'available', '4 Seats', 'Ready for new guests')">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">01</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB01</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary-fixed/30 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight">OPEN</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs mt-space-sm">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span class="font-body-md text-caption-sm font-medium">4 Seats</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-container text-tertiary font-body-md-bold text-[11px] truncate">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="truncate">Ready for Guests</span>
+</div>
+</div>
+</div>
+<!-- Table 2: OCCUPIED -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB02" data-status="occupied" data-table="Table 2" onclick="openTableSheet('Table 2', 'TAB02', 'occupied', '4 Guests', '#ORD-00121', '24m ago')">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">02</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB02</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary-fixed/40 text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight">BUSY</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 mt-space-sm">
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-caption-sm font-medium">4 Guests</span>
+</div>
+<div class="flex items-center gap-0.5 font-label-numeric text-[11px] text-primary">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+<span>24m</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary-fixed/20 text-on-surface">
+<span class="font-label-badge text-[11px] font-mono text-secondary-container">#ORD-00121</span>
+<span class="material-symbols-outlined text-[14px] text-secondary">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Table 3: AVAILABLE -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB03" data-status="available" data-table="Table 3" onclick="openTableSheet('Table 3', 'TAB03', 'available', '2 Seats', 'Ready for new guests')">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">03</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB03</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary-fixed/30 text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight">OPEN</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-2xs mt-space-sm">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span class="font-body-md text-caption-sm font-medium">2 Seats</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-container text-tertiary font-body-md-bold text-[11px] truncate">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="truncate">Ready for Guests</span>
+</div>
+</div>
+</div>
+<!-- Table 4: READY (PULSING GLOW FOR SERVE ACTION) -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-[0_4px_16px_rgba(0,120,45,0.18)] active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB04" data-status="occupied" data-table="Table 4" onclick="openTableSheet('Table 4', 'TAB04', 'ready', '2 Guests', '#ORD-00124', '18m ago', '2 items ready!')">
+<div class="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-container opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-tertiary-container"></span>
+</div>
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">04</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB04</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-tertiary-container text-on-primary">
+<span class="material-symbols-outlined text-[12px] animate-bounce">room_service</span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight uppercase">Ready</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 mt-space-sm">
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-caption-sm font-medium">2 Guests</span>
+</div>
+<span class="font-label-numeric text-[11px] text-tertiary font-bold">18m</span>
+</div>
+<div class="flex items-center justify-between px-2 py-1.5 rounded-lg bg-tertiary-fixed/40 text-on-tertiary-fixed">
+<div class="flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-tertiary">dinner_dining</span>
+<span class="font-body-md-bold text-[11px] truncate">2 items to serve!</span>
+</div>
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container"></span>
+</div>
+</div>
+</div>
+<!-- Table 5: RESERVED -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB05" data-status="reserved" data-table="Table 5" onclick="openTableSheet('Table 5', 'TAB05', 'reserved', '6 Seats', 'Mr. Sharma • 8:30 PM')">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">05</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB05</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight">HOLD</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 mt-space-sm">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-caption-sm font-medium">6 Seats</span>
+</div>
+<div class="flex flex-col p-1.5 rounded-lg bg-surface-container-high text-on-surface">
+<div class="flex items-center gap-1 text-primary font-body-md-bold text-[10px]">
+<span class="material-symbols-outlined text-[12px]">event_seat</span>
+<span>8:30 PM</span>
+</div>
+<span class="font-caption-sm text-[11px] text-on-surface truncate font-semibold">Mr. Sharma</span>
+</div>
+</div>
+</div>
+<!-- Table 6: OCCUPIED -->
+<div class="table-card relative flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer min-h-[160px]" data-code="TAB06" data-status="occupied" data-table="Table 6" onclick="openTableSheet('Table 6', 'TAB06', 'occupied', '3 Guests', '#ORD-00125', '12m ago')">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col">
+<span class="font-display-table-num text-display-table-num text-on-surface leading-none">06</span>
+<span class="font-label-badge text-label-badge font-bold tracking-wider text-on-surface-variant mt-1">TAB06</span>
+</div>
+<div class="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary-fixed/40 text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+<span class="font-caption-sm text-[10px] font-bold tracking-tight">BUSY</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 mt-space-sm">
+<div class="flex items-center justify-between text-on-surface-variant">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">groups</span>
+<span class="font-body-md text-caption-sm font-medium">3 Guests</span>
+</div>
+<div class="flex items-center gap-0.5 font-label-numeric text-[11px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+<span>12m</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-2 py-1 rounded-lg bg-secondary-fixed/20 text-on-surface">
+<span class="font-label-badge text-[11px] font-mono text-secondary-container">#ORD-00125</span>
+<span class="material-symbols-outlined text-[14px] text-secondary">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Details Modal / Action Sheet -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200 flex flex-col justify-end" id="tableModalBackdrop">
+<div class="w-full bg-surface-container-lowest rounded-t-2xl p-space-lg flex flex-col gap-space-md translate-y-full transition-transform duration-200 ease-out shadow-2xl" id="tableModalContent">
+<div class="w-12 h-1.5 bg-surface-variant rounded-full mx-auto -mt-2"></div>
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-on-surface" id="modalTableName">Table 1</h2>
+<span class="font-label-badge text-label-badge px-2 py-0.5 rounded bg-surface-container font-mono text-on-surface-variant" id="modalTableCode">TAB01</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant" id="modalSubtitle">Capacity: 4 Seats</span>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface" onclick="closeTableSheet()">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs" id="modalOrderBox">
+<div class="flex items-center justify-between">
+<span class="font-caption-sm text-caption-sm uppercase text-on-surface-variant tracking-wider font-bold">Status &amp; Service</span>
+<span class="font-label-badge text-[11px] px-2 py-0.5 rounded-full font-bold" id="modalStatusBadge">Available</span>
+</div>
+<p class="font-body-md-bold text-body-md-bold text-on-surface" id="modalDescription">Cleaned and ready for guests.</p>
+</div>
+<div class="flex flex-col gap-space-xs pt-space-xs">
+<button class="w-full min-h-[48px] rounded-xl bg-primary-container text-on-primary font-body-md-bold text-body-md-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform" id="modalPrimaryBtn">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span>Start New Order</span>
+</button>
+<button class="w-full min-h-[48px] rounded-xl bg-surface-container text-on-surface font-body-md-bold text-body-md-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform" id="modalSecondaryBtn">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span>View Order Summary</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Filter Tabs Interaction
+  const filterPills = document.querySelectorAll('.filter-pill');
+  const tableCards = document.querySelectorAll('.table-card');
+  const searchInput = document.getElementById('tableSearchInput');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+  let activeFilter = 'all';
+
+  filterPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      filterPills.forEach(p => {
+        p.classList.remove('bg-primary-container', 'text-on-primary');
+        p.classList.add('bg-surface-container', 'text-on-surface');
+      });
+      pill.classList.remove('bg-surface-container', 'text-on-surface');
+      pill.classList.add('bg-primary-container', 'text-on-primary');
+      
+      activeFilter = pill.getAttribute('data-filter');
+      applyFilters();
+    });
+  });
+
+  searchInput.addEventListener('input', (e) => {
+    if (e.target.value.trim().length > 0) {
+      clearSearchBtn.classList.remove('opacity-0', 'pointer-events-none');
+    } else {
+      clearSearchBtn.classList.add('opacity-0', 'pointer-events-none');
+    }
+    applyFilters();
+  });
+
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearSearchBtn.classList.add('opacity-0', 'pointer-events-none');
+    applyFilters();
+    searchInput.focus();
+  });
+
+  function applyFilters() {
+    const term = searchInput.value.toLowerCase().trim();
+    tableCards.forEach(card => {
+      const status = card.getAttribute('data-status');
+      const code = card.getAttribute('data-code').toLowerCase();
+      const name = card.getAttribute('data-table').toLowerCase();
+
+      const matchesFilter = (activeFilter === 'all' || status === activeFilter);
+      const matchesSearch = !term || code.includes(term) || name.includes(term);
+
+      if (matchesFilter && matchesSearch) {
+        card.style.display = 'flex';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+
+  // Modal actions
+  const backdrop = document.getElementById('tableModalBackdrop');
+  const modalContent = document.getElementById('tableModalContent');
+  const modalTableName = document.getElementById('modalTableName');
+  const modalTableCode = document.getElementById('modalTableCode');
+  const modalSubtitle = document.getElementById('modalSubtitle');
+  const modalStatusBadge = document.getElementById('modalStatusBadge');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalPrimaryBtn = document.getElementById('modalPrimaryBtn');
+  const modalSecondaryBtn = document.getElementById('modalSecondaryBtn');
+
+  function openTableSheet(tableName, code, status, subtitle, detail, time, extra) {
+    modalTableName.innerText = tableName;
+    modalTableCode.innerText = code;
+    modalSubtitle.innerText = subtitle;
+
+    if (status === 'available') {
+      modalStatusBadge.innerText = 'AVAILABLE';
+      modalStatusBadge.className = 'font-label-badge text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-tertiary-fixed text-tertiary';
+      modalDescription.innerText = 'Table is clean and ready for seating guests.';
+      modalPrimaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">add_circle</span><span>Start New Order</span>';
+      modalSecondaryBtn.style.display = 'none';
+    } else if (status === 'occupied') {
+      modalStatusBadge.innerText = 'OCCUPIED';
+      modalStatusBadge.className = 'font-label-badge text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-secondary-fixed text-secondary';
+      modalDescription.innerText = `Active Order: ${detail} (${time})`;
+      modalPrimaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">post_add</span><span>Add Items / Modifiers</span>';
+      modalSecondaryBtn.style.display = 'flex';
+      modalSecondaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">receipt_long</span><span>View Bill & Pay</span>';
+    } else if (status === 'ready') {
+      modalStatusBadge.innerText = 'KITCHEN READY';
+      modalStatusBadge.className = 'font-label-badge text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-tertiary-container text-on-primary';
+      modalDescription.innerText = `${detail} - Hot dishes ready for pick up at pass!`;
+      modalPrimaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">room_service</span><span>Serve All to Table</span>';
+      modalSecondaryBtn.style.display = 'flex';
+      modalSecondaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">receipt_long</span><span>View Order</span>';
+    } else if (status === 'reserved') {
+      modalStatusBadge.innerText = 'RESERVED';
+      modalStatusBadge.className = 'font-label-badge text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-primary-fixed text-primary';
+      modalDescription.innerText = `${detail}`;
+      modalPrimaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">how_to_reg</span><span>Seat Arrived Guest</span>';
+      modalSecondaryBtn.style.display = 'flex';
+      modalSecondaryBtn.innerHTML = '<span class="material-symbols-outlined text-[20px]">edit_calendar</span><span>Modify Booking</span>';
+    }
+
+    backdrop.classList.remove('opacity-0', 'pointer-events-none');
+    modalContent.classList.remove('translate-y-full');
+  }
+
+  function closeTableSheet() {
+    backdrop.classList.add('opacity-0', 'pointer-events-none');
+    modalContent.classList.add('translate-y-full');
+  }
+
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeTableSheet();
+  });
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-4px_16px_rgba(23,23,23,0.06)]" data-active-classes="text-primary-container font-body-md-bold"><div class="flex justify-around items-center h-bottom-nav-height px-space-2xs"><a class="flex-1 min-h-touch-min flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="home" href="#"><span class="material-symbols-outlined text-[24px]">home</span><span class="font-caption-sm text-caption-sm">Home</span></a><a aria-current="page" class="flex-1 min-h-touch-min flex flex-col items-center justify-center gap-0.5 transition-colors text-primary-container font-body-md-bold" data-path="tables" href="#"><span class="material-symbols-outlined text-[24px]">grid_view</span><span class="font-caption-sm text-caption-sm">Tables</span></a><a class="flex-1 min-h-touch-min flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="orders" href="#"><span class="material-symbols-outlined text-[24px]">receipt_long</span><span class="font-caption-sm text-caption-sm">Orders</span></a><a class="flex-1 min-h-touch-min flex flex-col items-center justify-center gap-0.5 text-on-surface-variant transition-colors hover:text-on-surface" data-path="profile" href="#"><span class="material-symbols-outlined text-[24px]">person</span><span class="font-caption-sm text-caption-sm">Profile</span></a></div></nav></body></html>
