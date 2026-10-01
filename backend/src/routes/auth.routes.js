@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const { protect } = require('../middleware/auth.middleware');
 
 // Login Route
 router.post('/login', authController.login);
 
-// Placeholder for current user profile
-router.get('/me', (req, res) => {
-  res.json({ message: 'Auth profile route placeholder.' });
+// Current user profile route
+router.get('/me', protect, (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    user: req.user
+  });
 });
 
 module.exports = router;

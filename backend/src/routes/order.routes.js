@@ -8,5 +8,6 @@ router.get('/:id', orderController.getOrderById);
 router.post('/', protect, orderController.createOrder);
 router.post('/:id/items', protect, orderController.addItemsToOrder);
 router.patch('/:id/status', orderController.updateOrderStatus);
+router.patch('/:id/takeover', protect, orderController.takeoverOrder);
 
 module.exports = router;

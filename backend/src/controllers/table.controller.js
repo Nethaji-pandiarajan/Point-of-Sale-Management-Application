@@ -39,6 +39,7 @@ const getTables = async (req, res, next) => {
              ao.status AS "activeOrderStatus",
              ao.total_amount AS "activeOrderTotal",
              ao.guest_count AS "activeOrderGuests",
+             ao.user_id AS "assignedWaiterId",
              u.name AS "assignedWaiter"
       FROM tables t
       LEFT JOIN LATERAL (

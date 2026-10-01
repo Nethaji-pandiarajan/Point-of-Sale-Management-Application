@@ -1,9 +1,24 @@
+
+const extractStatusTimestamp = (timeline, targetStatus, updatedAt, currentStatus) => {
+  if (Array.isArray(timeline)) {
+    for (let i = timeline.length - 1; i >= 0; i--) {
+      const entry = timeline[i];
+      if (entry && entry.status === targetStatus && (entry.time || entry.timestamp)) {
+        return entry.time || entry.timestamp;
+      }
+    }
+  }
+  if (currentStatus === targetStatus && updatedAt) {
+    return updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt;
+  }
+  return null;
+};
 const db = require('../config/db');
 const { createNotification } = require('../utils/notification.helper');
 
 const getOrders = async (req, res, next) => {
   try {
-    const { status, tableNo, waiterName, paymentStatus, search, startDate, endDate, page = 1, limit = 5 } = req.query;
+    const { status, tableNo, waiterName, waiterId, paymentStatus, search, startDate, endDate, page = 1, limit = 5 } = req.query;
 
     let countQueryText = `
       SELECT COUNT(o.id)::integer
@@ -13,9 +28,9 @@ const getOrders = async (req, res, next) => {
     `;
 
     let queryText = `
-      SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
+      SELECT o.id, o.user_id AS "waiterId", o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
              o.guest_count AS "guestCount",
-             o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
+             o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt", o.updated_at AS "updatedAt", o.updated_at AS "updatedAt",
              u.name AS "customerName", u.email, u.phone,
              COALESCE(
                JSON_AGG(
@@ -49,6 +64,16 @@ const getOrders = async (req, res, next) => {
       queryText += ` AND LOWER(o.table_number) = LOWER($${index})`;
       params.push(tableNo.trim());
       index++;
+    }
+
+    if (waiterId) {
+      const parsedWId = parseInt(waiterId, 10);
+      if (!isNaN(parsedWId)) {
+        countQueryText += ' AND o.user_id = $' + index;
+        queryText += ' AND o.user_id = $' + index;
+        params.push(parsedWId);
+        index++;
+      }
     }
 
     if (waiterName) {
@@ -123,6 +148,8 @@ const getOrders = async (req, res, next) => {
       orderNo: row.orderNo,
       orderType: row.orderType,
       customerName: row.customerName || 'Anonymous Customer',
+      waiterId: parseInt(row.waiterId || row.user_id, 10) || null,
+      waiterName: row.customerName || '',
       email: row.email || '',
       phone: row.phone || '',
       tableNo: row.tableNo || '',
@@ -134,6 +161,9 @@ const getOrders = async (req, res, next) => {
       status: row.status,
       paymentStatus: row.paymentStatus || 'unpaid',
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      servedAt: extractStatusTimestamp(row.timeline, 'served', row.updatedAt, row.status),
+      completedAt: extractStatusTimestamp(row.timeline, 'completed', row.updatedAt, row.status),
       timeline: row.timeline || []
     }));
 
@@ -161,7 +191,7 @@ const getOrderById = async (req, res, next) => {
     }
 
     const queryText = `
-      SELECT o.id, o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
+      SELECT o.id, o.user_id AS "waiterId", o.order_number AS "orderNo", o.order_type AS "orderType", o.table_number AS "tableNo",
              o.guest_count AS "guestCount",
              o.status, o.payment_status AS "paymentStatus", o.subtotal, o.total_amount AS "totalAmount", o.notes, o.timeline, o.created_at AS "createdAt",
              u.name AS "customerName", u.email, u.phone,
@@ -190,6 +220,8 @@ const getOrderById = async (req, res, next) => {
       orderNo: order.orderNo,
       orderType: order.orderType,
       customerName: order.customerName || 'Anonymous Customer',
+      waiterId: parseInt(order.waiterId || order.user_id, 10) || null,
+      waiterName: order.customerName || '',
       email: order.email || '',
       phone: order.phone || '',
       tableNo: order.tableNo || '',
@@ -201,6 +233,9 @@ const getOrderById = async (req, res, next) => {
       status: order.status,
       paymentStatus: order.paymentStatus || 'unpaid',
       createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      servedAt: extractStatusTimestamp(order.timeline, 'served', order.updatedAt, order.status),
+      completedAt: extractStatusTimestamp(order.timeline, 'completed', order.updatedAt, order.status),
       timeline: order.timeline || []
     };
 
@@ -666,7 +701,89 @@ const addItemsToOrder = async (req, res, next) => {
   }
 };
 
+
+const takeoverOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) {
+      return res.status(400).json({ status: 'error', message: 'Invalid order ID format' });
+    }
+
+    const newWaiterId = req.user.id;
+    const newWaiterName = req.user.name || 'Waiter';
+
+    const orderRes = await db.query(
+      `SELECT o.id, o.order_number AS "orderNo", o.status, o.user_id AS "currentWaiterId", o.table_number AS "tableNo", o.timeline,
+              u.name AS "currentWaiterName"
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       WHERE o.id = $1`,
+      [parsedId]
+    );
+
+    const order = orderRes.rows[0];
+    if (!order) {
+      return res.status(404).json({ status: 'error', message: 'Order not found' });
+    }
+
+    if (!['pending', 'preparing', 'ready', 'served'].includes(order.status)) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Cannot take over an order with status "${order.status}". Only active orders can be taken over.`
+      });
+    }
+
+    if (order.currentWaiterId === newWaiterId) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'Order is already assigned to you',
+        data: {
+          id: order.id,
+          orderNo: order.orderNo,
+          tableNo: order.tableNo,
+          assignedWaiterId: newWaiterId,
+          assignedWaiter: newWaiterName
+        }
+      });
+    }
+
+    const prevWaiterName = order.currentWaiterName || 'Previous Server';
+    let timeline = Array.isArray(order.timeline) ? order.timeline : [];
+    timeline.push({
+      action: 'takeover',
+      previousWaiterId: order.currentWaiterId,
+      previousWaiterName: prevWaiterName,
+      newWaiterId: newWaiterId,
+      newWaiterName: newWaiterName,
+      timestamp: new Date().toISOString(),
+      note: `Server changed: ${prevWaiterName} → ${newWaiterName}`
+    });
+
+    await db.query(
+      'UPDATE orders SET user_id = $1, timeline = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+      [newWaiterId, JSON.stringify(timeline), parsedId]
+    );
+
+    res.status(200).json({
+      status: 'success',
+      message: `Table order successfully taken over from ${prevWaiterName}`,
+      data: {
+        id: order.id,
+        orderNo: order.orderNo,
+        tableNo: order.tableNo,
+        assignedWaiterId: newWaiterId,
+        assignedWaiter: newWaiterName,
+        previousWaiter: prevWaiterName
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
+  takeoverOrder,
   addItemsToOrder,
   getOrders,
   getOrderById,
